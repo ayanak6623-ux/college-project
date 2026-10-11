@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Employee Profile</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="d-flex align-items-center mb-4">
+            <a th:href="@{/employees}" class="btn btn-light rounded-circle me-3"><i class="bi bi-arrow-left"></i></a>
+            <h4 class="fw-bold mb-0">Employee Profile</h4>
+        </div>
+
+        <!-- Header Card -->
+        <div class="glass-card rounded-4 p-4 mb-4 position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-50 bg-gradient-primary"></div>
+            <div class="position-relative z-1 d-flex flex-column flex-md-row align-items-center mt-4">
+                <img th:if="${employee.photoPath != null}" th:src="@{${employee.photoPath}}" class="rounded-circle border border-4 border-white shadow bg-white me-md-4 mb-3 mb-md-0" width="120" height="120" style="object-fit: cover;">
+                <img th:if="${employee.photoPath == null}" th:src="@{'https://ui-avatars.com/api/?name=' + ${employee.firstName} + '+' + ${employee.lastName} + '&background=random&size=120'}" class="rounded-circle border border-4 border-white shadow bg-white me-md-4 mb-3 mb-md-0" width="120" height="120">
+                
+                <div class="text-center text-md-start flex-grow-1">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center gap-2 mb-2">
+                        <h3 class="fw-bold mb-0" th:text="${employee.fullName}">Name</h3>
+                        <span class="badge rounded-pill" 
+                              th:classappend="${employee.status.name() == 'ACTIVE' ? 'bg-success' : 'bg-danger'}" 
+                              th:text="${employee.status}">Status</span>
+                        <span class="badge bg-light text-dark rounded-pill border" th:text="${employee.employeeCode}">EMP-001</span>
+                    </div>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-briefcase me-1"></i> <span th:text="${employee.designation != null ? employee.designation.name : '-'}">Desig</span>
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-diagram-3 me-1"></i> <span th:text="${employee.department != null ? employee.department.name : '-'}">Dept</span>
+                    </p>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-envelope me-1"></i> <span th:text="${employee.email}">email</span>
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-telephone me-1"></i> <span th:text="${employee.phone}">phone</span>
+                    </p>
+                </div>
+                
+                <div class="mt-3 mt-md-0">
+                    <a th:href="@{/employees/edit/{id}(id=${employee.id})}" class="btn btn-outline-primary rounded-pill px-4 hover-lift">
+                        <i class="bi bi-pencil me-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs border-0 mb-4" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 fw-bold me-2 border-0" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold me-2 border-0" id="job-tab" data-bs-toggle="tab" data-bs-target="#job" type="button" role="tab">Job Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold me-2 border-0" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab">Attendance</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold border-0" id="leaves-tab" data-bs-toggle="tab" data-bs-target="#leaves" type="button" role="tab">Leaves</button>
+            </li>
+        </ul>
+        
+        <style>
+            .nav-tabs .nav-link { background: #f1f5f9; color: var(--text-muted); }
+            .nav-tabs .nav-link.active { background: #fff; color: var(--primary-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            [data-theme='dark'] .nav-tabs .nav-link { background: #1e293b; }
+            [data-theme='dark'] .nav-tabs .nav-link.active { background: #0f172a; color: #a5b4fc; }
+        </style>
+
+        <div class="tab-content">
+            <!-- Overview Tab -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="glass-card rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4">Personal Information</h5>
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted w-50">Date of Birth</td>
+                                        <td class="fw-bold" th:text="${employee.dateOfBirth}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Gender</td>
+                                        <td class="fw-bold" th:text="${employee.gender}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Address</td>
+                                        <td class="fw-bold" th:text="${employee.address}">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Tab -->
+            <div class="tab-pane fade" id="job" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="glass-card rounded-4 p-4 h-100">
+                            <h5 class="fw-bold mb-4">Employment Details</h5>
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted w-50">Joining Date</td>
+                                        <td class="fw-bold" th:text="${employee.joiningDate}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Employment Type</td>
+                                        <td class="fw-bold" th:text="${employee.employmentType}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Reporting Manager</td>
+                                        <td class="fw-bold">
+                                            <span th:if="${employee.reportingManager != null}" th:text="${employee.reportingManager.fullName}"></span>
+                                            <span th:if="${employee.reportingManager == null}" class="text-muted fst-italic">None</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Salary</td>
+                                        <td class="fw-bold" th:text="${employee.salary != null ? '$' + employee.salary : '-'}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Shift</td>
+                                        <td class="fw-bold" th:text="${employee.shiftId != null ? 'Shift ID: ' + employee.shiftId : 'Not Assigned'}">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attendance Tab -->
+            <div class="tab-pane fade" id="attendance" role="tabpanel">
+                <div class="glass-card rounded-4 p-4 shadow-sm">
+                    <h5 class="fw-bold mb-4">Current Month Attendance</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Hours</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(monthlyAttendance)}">
+                                    <td colspan="5" class="text-center text-muted py-4">No attendance records found for this month.</td>
+                                </tr>
+                                <tr th:each="att : ${monthlyAttendance}">
+                                    <td class="fw-bold" th:text="${#temporals.format(att.date, 'dd MMM yyyy, EEE')}">01 Jan</td>
+                                    <td th:text="${att.checkIn != null ? #temporals.format(att.checkIn, 'HH:mm') : '-'}">09:00</td>
+                                    <td th:text="${att.checkOut != null ? #temporals.format(att.checkOut, 'HH:mm') : '-'}">17:00</td>
+                                    <td th:text="${att.totalHours != null ? #numbers.formatDecimal(att.totalHours, 1, 1) + 'h' : '-'}">8.0h</td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3" 
+                                              th:classappend="${att.status.name() == 'PRESENT' ? 'bg-success' : 
+                                                               att.status.name() == 'ABSENT' ? 'bg-danger' : 
+                                                               att.status.name() == 'LATE' ? 'bg-warning' : 'bg-info'}" 
+                                              th:text="${att.status}">Status</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Leaves Tab -->
+            <div class="tab-pane fade" id="leaves" role="tabpanel">
+                <div class="glass-card rounded-4 p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-4">Leave Balances</h5>
+                    <div class="row g-4">
+                        <div class="col-md-6" th:each="lb : ${leaveBalances}">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0 text-primary" th:text="${lb.leaveType.name}">Sick</h6>
+                                    <span class="badge bg-white text-dark border" th:text="${lb.remaining} + ' Remaining'">10 Remaining</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         th:style="'width: ' + (${lb.used} / (${lb.allocated} + ${lb.carriedForward}) * 100) + '%'" 
+                                         th:aria-valuenow="${lb.used}" aria-valuemin="0" th:aria-valuemax="${lb.allocated + lb.carriedForward}"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>Used: <strong th:text="${lb.used}">0</strong></span>
+                                    <span>Allocated: <strong th:text="${lb.allocated}">12</strong> <span th:if="${lb.carriedForward > 0}">+ <span th:text="${lb.carriedForward}"></span> carry</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(leaveBalances)}" class="col-12 text-center text-muted">
+                            No leave balances created for this year yet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

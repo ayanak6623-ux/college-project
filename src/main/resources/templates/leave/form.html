@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Apply Leave</title>
+</head>
+<body>
+    <div layout:fragment="content" class="max-w-md mx-auto" style="max-width: 600px;">
+        <div class="d-flex align-items-center mb-4">
+            <a th:href="@{/leaves}" class="btn btn-light rounded-circle me-3"><i class="bi bi-arrow-left"></i></a>
+            <h4 class="fw-bold mb-0">Apply Leave on Behalf</h4>
+        </div>
+
+        <div class="glass-card p-4 rounded-4 shadow-sm">
+            <form th:action="@{/leaves/save}" th:object="${leaveRequestDto}" method="post" class="needs-validation" novalidate>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Select Employee <span class="text-danger">*</span></label>
+                    <select class="form-select" th:field="*{employeeId}" required>
+                        <option value="">Choose Employee...</option>
+                        <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.fullName} + ' (' + ${emp.employeeCode} + ')'"></option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Leave Type <span class="text-danger">*</span></label>
+                    <div class="row g-2">
+                        <div class="col-6" th:each="lt : ${leaveTypes}">
+                            <input type="radio" class="btn-check" th:field="*{leaveTypeId}" th:value="${lt.id}" th:id="'lt_' + ${lt.id}" required>
+                            <label class="btn btn-outline-light text-dark w-100 text-start d-flex align-items-center border p-3 rounded-3" th:for="'lt_' + ${lt.id}">
+                                <div class="rounded-circle me-3" style="width: 16px; height: 16px;" th:styleappend="'background-color: ' + ${lt.color}"></div>
+                                <div>
+                                    <div class="fw-bold" th:text="${lt.name}">Type</div>
+                                    <small class="text-muted" th:text="${lt.paid ? 'Paid' : 'Unpaid'}">Paid</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">From Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" th:field="*{fromDate}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">To Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" th:field="*{toDate}" required>
+                    </div>
+                    <div class="col-12 mt-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" th:field="*{halfDay}" id="halfDayCheck">
+                            <label class="form-check-label fw-bold text-muted" for="halfDayCheck">Request as Half Day</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Reason</label>
+                    <textarea class="form-control" th:field="*{reason}" rows="3" placeholder="Optional but recommended..."></textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i> HR requests are processed based on the leave type's approval settings (auto-approved or pending).
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a th:href="@{/leaves}" class="btn btn-light rounded-pill px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5">Submit Request</button>
+                </div>
+            </form>
+        </div>
+        
+        <style>
+            .btn-check:checked + .btn-outline-light {
+                border-color: var(--primary-color) !important;
+                background-color: rgba(79, 70, 229, 0.05);
+            }
+        </style>
+    </div>
+</body>
+</html>

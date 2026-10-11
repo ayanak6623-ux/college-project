@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Account Settings</title>
+    <style>
+        .settings-sidebar .nav-link {
+            color: var(--text-muted);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .settings-sidebar .nav-link:hover {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--primary-color);
+        }
+        .settings-sidebar .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content" class="max-w-md mx-auto" style="max-width: 900px;">
+        <h4 class="fw-bold mb-4">Account Settings</h4>
+
+        <div class="row g-4">
+            <!-- Settings Sidebar -->
+            <div class="col-md-4 col-lg-3">
+                <div class="glass-card rounded-4 p-3 shadow-sm position-sticky" style="top: 20px;">
+                    <div class="nav flex-column nav-pills settings-sidebar" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                        <a class="nav-link fw-medium d-flex align-items-center" th:classappend="${activeTab == 'profile'} ? 'active' : ''" id="v-pills-profile-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile" type="button" role="tab">
+                            <i class="bi bi-person me-3 fs-5"></i> Profile
+                        </a>
+                        <a class="nav-link fw-medium d-flex align-items-center" th:classappend="${activeTab == 'security'} ? 'active' : ''" id="v-pills-security-tab" data-bs-toggle="pill" data-bs-target="#v-pills-security" type="button" role="tab">
+                            <i class="bi bi-shield-lock me-3 fs-5"></i> Security
+                        </a>
+                        <a class="nav-link fw-medium d-flex align-items-center" th:classappend="${activeTab == 'preferences'} ? 'active' : ''" id="v-pills-preferences-tab" data-bs-toggle="pill" data-bs-target="#v-pills-preferences" type="button" role="tab">
+                            <i class="bi bi-sliders me-3 fs-5"></i> Preferences
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="col-md-8 col-lg-9">
+                <div class="tab-content" id="v-pills-tabContent">
+                    
+                    <!-- Profile Tab -->
+                    <div class="tab-pane fade" th:classappend="${activeTab == 'profile'} ? 'show active' : ''" id="v-pills-profile" role="tabpanel">
+                        <div class="glass-card rounded-4 p-4 shadow-sm mb-4">
+                            <h5 class="fw-bold mb-4">Profile Information</h5>
+                            
+                            <div class="d-flex align-items-center mb-4 pb-4 border-bottom">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-4 shadow" style="width: 70px; height: 70px; font-size: 2rem; font-weight: bold;">
+                                    <span th:text="${#strings.substring(user.name, 0, 1).toUpperCase()}">A</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1 fw-bold" th:text="${user.name}">Admin User</h5>
+                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                                        <i class="bi bi-person-badge me-1"></i>
+                                        <span th:text="${#strings.substringAfter(user.role, 'ROLE_')}">ADMIN</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <form th:action="@{/settings/profile}" method="post" class="needs-validation" novalidate>
+                                <div class="row g-4">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold text-muted small text-uppercase">Full Name</label>
+                                        <input type="text" name="name" class="form-control form-control-lg bg-light" th:value="${user.name}" required>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold text-muted small text-uppercase">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                                            <input type="email" class="form-control form-control-lg bg-light" th:value="${user.email}" disabled>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Email address cannot be changed as it is used for login.</small>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button type="submit" class="btn btn-primary rounded-pill px-5">Save Profile</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Security Tab -->
+                    <div class="tab-pane fade" th:classappend="${activeTab == 'security'} ? 'show active' : ''" id="v-pills-security" role="tabpanel">
+                        <div class="glass-card rounded-4 p-4 shadow-sm mb-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3">
+                                    <i class="bi bi-shield-lock-fill fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">Change Password</h5>
+                                    <small class="text-muted">Ensure your account is using a long, random password to stay secure.</small>
+                                </div>
+                            </div>
+                            
+                            <hr class="mb-4">
+
+                            <form th:action="@{/settings/password}" method="post" id="passwordForm">
+                                <div class="row g-4">
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold text-muted small text-uppercase">Current Password <span class="text-danger">*</span></label>
+                                        <input type="password" name="oldPassword" class="form-control form-control-lg bg-light" required>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold text-muted small text-uppercase">New Password <span class="text-danger">*</span></label>
+                                        <input type="password" name="newPassword" id="newPassword" class="form-control form-control-lg bg-light" required minlength="6">
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div id="passwordStrength" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <small class="text-muted">Minimum 6 characters required.</small>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold text-muted small text-uppercase">Confirm New Password <span class="text-danger">*</span></label>
+                                        <input type="password" id="confirmPassword" class="form-control form-control-lg bg-light" required minlength="6">
+                                        <div class="invalid-feedback">Passwords do not match.</div>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <button type="submit" class="btn btn-primary rounded-pill px-5">Update Password</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Preferences Tab -->
+                    <div class="tab-pane fade" th:classappend="${activeTab == 'preferences'} ? 'show active' : ''" id="v-pills-preferences" role="tabpanel">
+                        <div class="glass-card rounded-4 p-4 shadow-sm mb-4">
+                            <h5 class="fw-bold mb-4">UI Preferences</h5>
+                            
+                            <div class="list-group list-group-flush border-0">
+                                <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-light">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-moon-stars text-primary me-2"></i> Dark Mode</h6>
+                                        <small class="text-muted">Toggle between light and dark themes (saves locally).</small>
+                                    </div>
+                                    <div class="form-check form-switch fs-4">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="prefDarkMode">
+                                    </div>
+                                </div>
+                                <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center border-bottom border-light">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-magic text-warning me-2"></i> Reduced Animations</h6>
+                                        <small class="text-muted">Disable UI micro-animations and transitions.</small>
+                                    </div>
+                                    <div class="form-check form-switch fs-4">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="prefAnimations">
+                                    </div>
+                                </div>
+                                <div class="list-group-item bg-transparent px-0 py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="fw-bold mb-1"><i class="bi bi-list-nested text-success me-2"></i> Compact Table View</h6>
+                                        <small class="text-muted">Reduce padding in tables to show more data.</small>
+                                    </div>
+                                    <div class="form-check form-switch fs-4">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="prefCompact">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <th:block layout:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Password Validation Logic
+                const passForm = document.getElementById('passwordForm');
+                const newPass = document.getElementById('newPassword');
+                const confirmPass = document.getElementById('confirmPassword');
+                const strengthBar = document.getElementById('passwordStrength');
+                
+                if (newPass) {
+                    newPass.addEventListener('input', function() {
+                        const val = newPass.value;
+                        let strength = 0;
+                        if(val.length > 5) strength += 25;
+                        if(val.length > 8) strength += 25;
+                        if(/[A-Z]/.test(val)) strength += 25;
+                        if(/[0-9!@#\$%\^\&*\)\(+=._-]/.test(val)) strength += 25;
+                        
+                        strengthBar.style.width = strength + '%';
+                        if(strength < 50) {
+                            strengthBar.className = 'progress-bar bg-danger';
+                        } else if(strength < 100) {
+                            strengthBar.className = 'progress-bar bg-warning';
+                        } else {
+                            strengthBar.className = 'progress-bar bg-success';
+                        }
+                    });
+                }
+                
+                if (passForm) {
+                    passForm.addEventListener('submit', function(e) {
+                        if (newPass.value !== confirmPass.value) {
+                            e.preventDefault();
+                            confirmPass.classList.add('is-invalid');
+                        } else {
+                            confirmPass.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    confirmPass.addEventListener('input', function() {
+                        if (newPass.value === confirmPass.value) {
+                            confirmPass.classList.remove('is-invalid');
+                            confirmPass.classList.add('is-valid');
+                        } else {
+                            confirmPass.classList.remove('is-valid');
+                        }
+                    });
+                }
+
+                // Preferences Logic (Local Storage)
+                const prefDark = document.getElementById('prefDarkMode');
+                const prefAnim = document.getElementById('prefAnimations');
+                const prefComp = document.getElementById('prefCompact');
+                
+                if(prefDark) {
+                    prefDark.checked = localStorage.getItem('theme') === 'dark';
+                    prefDark.addEventListener('change', (e) => {
+                        const themeToggleBtn = document.getElementById('theme-toggle');
+                        if(themeToggleBtn) {
+                            themeToggleBtn.click();
+                        } else {
+                            if(e.target.checked) {
+                                document.documentElement.setAttribute('data-theme', 'dark');
+                                document.documentElement.setAttribute('data-bs-theme', 'dark');
+                                localStorage.setItem('theme', 'dark');
+                            } else {
+                                document.documentElement.setAttribute('data-theme', 'light');
+                                document.documentElement.setAttribute('data-bs-theme', 'light');
+                                localStorage.setItem('theme', 'light');
+                            }
+                        }
+                    });
+                }
+                
+                if(prefAnim) {
+                    prefAnim.checked = localStorage.getItem('reduceAnim') === 'true';
+                    prefAnim.addEventListener('change', (e) => {
+                        localStorage.setItem('reduceAnim', e.target.checked);
+                        if(e.target.checked) {
+                            document.body.classList.add('no-animations');
+                        } else {
+                            document.body.classList.remove('no-animations');
+                        }
+                    });
+                }
+
+                if(prefComp) {
+                    prefComp.checked = localStorage.getItem('compactView') === 'true';
+                    prefComp.addEventListener('change', (e) => {
+                        localStorage.setItem('compactView', e.target.checked);
+                        // Trigger a page reload to apply compact class universally if needed, or toggle a class on body
+                        if(e.target.checked) {
+                            document.body.classList.add('compact-tables');
+                        } else {
+                            document.body.classList.remove('compact-tables');
+                        }
+                    });
+                }
+            });
+        </script>
+        
+        <style>
+            /* Dynamic classes applied via JS */
+            .no-animations * {
+                transition: none !important;
+                animation: none !important;
+            }
+            .compact-tables .table td, .compact-tables .table th {
+                padding: 0.25rem 0.5rem !important;
+                font-size: 0.9rem;
+            }
+        </style>
+    </th:block>
+</body>
+</html>

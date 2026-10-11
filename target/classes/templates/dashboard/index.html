@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Welcome Banner -->
+        <div class="glass-card rounded-4 p-4 mb-4 bg-gradient-primary text-white shadow-sm position-relative overflow-hidden">
+            <div class="position-relative z-1">
+                <h3 class="fw-bold mb-1">Welcome back, HR Admin! 👋</h3>
+                <p class="mb-0 opacity-75"><i class="bi bi-calendar-event me-2"></i> <span th:text="${todayDate}"></span></p>
+            </div>
+            <!-- Decorative circle -->
+            <div class="position-absolute top-0 end-0 translate-middle-y p-5" style="background: rgba(255,255,255,0.1); border-radius: 50%; width: 200px; height: 200px;"></div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card rounded-4 p-4 h-100 hover-lift border-start border-4 border-primary">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Total Employees</h6>
+                        <div class="p-2 bg-primary bg-opacity-10 rounded-3 text-primary">
+                            <i class="bi bi-people fs-5"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-0 count-up" th:attr="data-target=${totalEmployees}">0</h2>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card rounded-4 p-4 h-100 hover-lift border-start border-4 border-success">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Present Today</h6>
+                        <div class="p-2 bg-success bg-opacity-10 rounded-3 text-success">
+                            <i class="bi bi-person-check fs-5"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-0 count-up" th:attr="data-target=${presentToday}">0</h2>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card rounded-4 p-4 h-100 hover-lift border-start border-4 border-warning">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">On Leave</h6>
+                        <div class="p-2 bg-warning bg-opacity-10 rounded-3 text-warning">
+                            <i class="bi bi-person-dash fs-5"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-0 count-up" th:attr="data-target=${onLeave}">0</h2>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="glass-card rounded-4 p-4 h-100 hover-lift border-start border-4 border-danger">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="text-muted mb-0">Pending Leaves</h6>
+                        <div class="p-2 bg-danger bg-opacity-10 rounded-3 text-danger">
+                            <i class="bi bi-hourglass-split fs-5"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-0 count-up" th:attr="data-target=${pendingLeaves}">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="glass-card rounded-4 p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold mb-4">Attendance Trend</h5>
+                    <canvas id="attendanceChart" height="100"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="glass-card rounded-4 p-4 h-100 shadow-sm">
+                    <h5 class="fw-bold mb-4">Departments</h5>
+                    <canvas id="deptChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Row -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="glass-card rounded-4 p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Recent Employees</h5>
+                        <a th:href="@{/employees}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Department</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="emp : ${recentEmployees}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img th:if="${emp.photoPath != null}" th:src="@{${emp.photoPath}}" class="rounded-circle me-2" width="32" height="32" style="object-fit: cover;">
+                                            <img th:if="${emp.photoPath == null}" th:src="@{'https://ui-avatars.com/api/?name=' + ${emp.firstName} + '+' + ${emp.lastName} + '&background=random'}" class="rounded-circle me-2" width="32" height="32">
+                                            <div>
+                                                <h6 class="mb-0" th:text="${emp.fullName}">Name</h6>
+                                                <small class="text-muted" th:text="${emp.email}">email@company.com</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td th:text="${emp.department != null ? emp.department.name : '-'}">Department</td>
+                                    <td th:text="${emp.designation != null ? emp.designation.name : '-'}">Role</td>
+                                    <td>
+                                        <span class="badge rounded-pill px-3" 
+                                              th:classappend="${emp.status.name() == 'ACTIVE' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'}" 
+                                              th:text="${emp.status}">Active</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="glass-card rounded-4 p-4 h-100 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Pending Leaves</h5>
+                        <a th:href="@{/leaves(status='PENDING')}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(recentPendingLeaves)}" class="text-center text-muted p-4">
+                        <i class="bi bi-check2-circle fs-1 text-success mb-2"></i>
+                        <p class="mb-0">All caught up!</p>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded-3" th:each="lr : ${recentPendingLeaves}">
+                        <div class="bg-warning text-dark rounded p-2 text-center me-3" style="min-width: 50px;">
+                            <h5 class="mb-0 fw-bold" th:text="${lr.totalDays}">1</h5>
+                            <small>days</small>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0 fw-bold" th:text="${lr.employee.firstName + ' ' + lr.employee.lastName}">Name</h6>
+                            <small class="text-muted" th:text="${lr.leaveType.name} + ' (' + ${#temporals.format(lr.fromDate, 'dd MMM')} + ')'">Type</small>
+                        </div>
+                        <a th:href="@{/leaves(status='PENDING')}" class="btn btn-sm btn-primary rounded-pill px-3">Review</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            document.addEventListener("DOMContentLoaded", function() {
+                // Attendance Line Chart
+                const ctxAtt = document.getElementById('attendanceChart').getContext('2d');
+                new Chart(ctxAtt, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Present Employees',
+                            data: [110, 115, 112, 118, 120, 10, 5],
+                            borderColor: '#4F46E5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Department Doughnut Chart
+                const deptNames = /*[[${deptNames}]]*/ [];
+                const deptCounts = /*[[${deptCounts}]]*/ [];
+                
+                const ctxDept = document.getElementById('deptChart').getContext('2d');
+                new Chart(ctxDept, {
+                    type: 'doughnut',
+                    data: {
+                        labels: deptNames,
+                        datasets: [{
+                            data: deptCounts,
+                            backgroundColor: ['#4F46E5', '#10B981', '#F59E0B', '#F43F5E', '#3B82F6', '#8B5CF6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            });
+        </script>
+    </th:block>
+</body>
+</html>

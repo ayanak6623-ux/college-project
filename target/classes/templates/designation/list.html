@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/base}">
+<head>
+    <title>Designations</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Designations</h4>
+            <a th:href="@{/designations/add}" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i>Add Designation
+            </a>
+        </div>
+
+        <div class="glass-card p-4 rounded-4 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(designations)}">
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                No designations found.
+                            </td>
+                        </tr>
+                        <tr th:each="desig, stat : ${designations}">
+                            <td th:text="${stat.count}">1</td>
+                            <td class="fw-bold" th:text="${desig.name}">Engineer</td>
+                            <td th:text="${desig.description}">Desc</td>
+                            <td class="text-end">
+                                <a th:href="@{/designations/edit/{id}(id=${desig.id})}" class="btn btn-sm btn-light btn-icon rounded-circle me-1" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/designations/delete/{id}(id=${desig.id})}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this designation?');">
+                                    <button type="submit" class="btn btn-sm btn-light text-danger btn-icon rounded-circle" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
