@@ -152,7 +152,7 @@ export const EmployeeFormPage = () => {
       <Input label="Joining Date" type="date" {...register('joiningDate')} error={errors.joiningDate?.message as string} />
       <Select label="Employment Type" options={['Full-time','Part-time','Intern','Contract'].map(d=>({label:d,value:d}))} {...register('employmentType')} error={errors.employmentType?.message as string} />
       <Input label="Reporting Manager" {...register('reportingManager')} error={errors.reportingManager?.message as string} />
-      <Input label="Annual Salary ($)" type="number" {...register('salary')} error={errors.salary?.message as string} />
+      <Input label="Annual Salary (₹)" type="number" placeholder="e.g. 650000" {...register('salary')} error={errors.salary?.message as string} />
     </div>
   );
 
@@ -210,6 +210,7 @@ export const EmployeeFormPage = () => {
               <p><span className="text-slate-500 w-32 inline-block">Designation:</span> {data.designation}</p>
               <p><span className="text-slate-500 w-32 inline-block">Employment:</span> {data.employmentType}</p>
               <p><span className="text-slate-500 w-32 inline-block">Shift:</span> {shifts.find(s => s.id === data.shiftId)?.name || data.shiftId}</p>
+              {data.salary && <p><span className="text-slate-500 w-32 inline-block">Annual Salary:</span> ₹{Number(data.salary).toLocaleString('en-IN')}</p>}
             </div>
           </div>
         </div>

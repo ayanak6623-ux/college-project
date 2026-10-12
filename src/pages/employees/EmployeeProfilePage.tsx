@@ -213,7 +213,7 @@ export const EmployeeProfilePage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-slate-500 mb-1">Annual Salary</p>
-                    <p className="font-medium">${employee?.salary.toLocaleString()}</p>
+                    <p className="font-medium">₹{employee?.salary ? employee.salary.toLocaleString('en-IN') : '0'}</p>
                   </div>
                 </div>
               </div>
