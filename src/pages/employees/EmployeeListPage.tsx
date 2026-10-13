@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Plus, Search, Filter, LayoutGrid, List as ListIcon, 
-  MoreVertical, Eye, Edit, Trash2, UserCheck, UserX,
-  RotateCw, AlertTriangle, CheckCircle2, Database
+  Eye, Edit, Trash2
 } from 'lucide-react';
 import { useEmployeeStore } from '../../store/employeeStore';
 import { Card, CardContent } from '../../components/Card';
@@ -21,10 +20,7 @@ export const EmployeeListPage = () => {
     employees, 
     deleteEmployee, 
     updateEmployee, 
-    fetchEmployees, 
-    isLoading, 
-    isBackendConnected,
-    error 
+    fetchEmployees 
   } = useEmployeeStore();
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,54 +62,14 @@ export const EmployeeListPage = () => {
             <Badge variant="outline" className="text-xs font-semibold">
               {employees.length} Total
             </Badge>
-            {isBackendConnected ? (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                <Database size={11} /> MongoDB Connected
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                <AlertTriangle size={11} /> Offline Cache
-              </span>
-            )}
           </div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Manage your team members and their live database records</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Manage your team members and their information</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => fetchEmployees()} 
-            disabled={isLoading}
-            className="text-slate-600 dark:text-slate-300"
-          >
-            <RotateCw size={15} className={cn("mr-1.5", isLoading && "animate-spin")} />
-            Sync DB
-          </Button>
-          <Button onClick={() => navigate('/employees/add')}>
-            <Plus size={18} className="mr-2" />
-            Add Employee
-          </Button>
-        </div>
+        <Button onClick={() => navigate('/employees/add')}>
+          <Plus size={18} className="mr-2" />
+          Add Employee
+        </Button>
       </div>
-
-      {!isBackendConnected && (
-        <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
-            <span>
-              <strong>Notice:</strong> Backend server at <code className="bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">http://localhost:5000</code> is offline. Showing cached employees. Make sure to run <code className="bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">npm run dev</code>.
-            </span>
-          </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => fetchEmployees()}
-            className="shrink-0 h-7 text-xs border-amber-300 hover:bg-amber-100 text-amber-900"
-          >
-            Retry Connection
-          </Button>
-        </div>
-      )}
 
       <Card>
         <CardContent className="p-4 sm:p-6">
