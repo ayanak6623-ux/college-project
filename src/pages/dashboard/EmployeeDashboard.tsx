@@ -16,7 +16,7 @@ import { cn } from '../../utils/cn';
 
 export const EmployeeDashboard = () => {
   const { user } = useAuthStore();
-  const { addLeaveRequest, leaveRequests } = useLeaveStore();
+  const { addLeaveRequest, leaveRequests, leaveTypes } = useLeaveStore();
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockTime, setClockTime] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -28,7 +28,7 @@ export const EmployeeDashboard = () => {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     if (isClockedIn) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);
@@ -51,7 +51,7 @@ export const EmployeeDashboard = () => {
     hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
 
-  const myLeaves = leaveRequests.filter(l => l.employee === user?.name);
+  const myLeaves = leaveRequests.filter(l => l.employeeId === (user as any)?.id || l.employeeId === user?.email || (l as any).employee === user?.name);
   const pendingLeavesCount = myLeaves.filter(l => l.status === 'Pending').length;
   const approvedLeavesCount = myLeaves.filter(l => l.status === 'Approved').length;
 
@@ -81,13 +81,14 @@ export const EmployeeDashboard = () => {
     const diffTime = Math.abs(d2.getTime() - d1.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
+    const lt = leaveTypes.find(t => t.name.toLowerCase() === leaveForm.type.toLowerCase()) || leaveTypes[0];
     addLeaveRequest({
-      employee: user?.name || 'Employee',
-      type: leaveForm.type,
-      startDate: leaveForm.fromDate,
-      endDate: leaveForm.toDate,
-      days: diffDays,
-      status: 'Pending',
+      employeeId: (user as any)?.id || user?.email || 'emp-1',
+      leaveTypeId: lt?.id || 'lt-1',
+      fromDate: leaveForm.fromDate,
+      toDate: leaveForm.toDate,
+      totalDays: diffDays,
+      isHalfDay: false,
       reason: leaveForm.reason
     });
 
@@ -353,8 +354,8 @@ export const EmployeeDashboard = () => {
                            <Clock size={18} />}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{leave.type}</p>
-                          <p className="text-xs text-slate-500">{leave.startDate} to {leave.endDate} ({leave.days} days)</p>
+                          <p className="text-sm font-medium">{leaveTypes.find(t => t.id === leave.leaveTypeId)?.name || (leave as any).type || 'Leave'}</p>
+                          <p className="text-xs text-slate-500">{leave.fromDate || (leave as any).startDate} to {leave.toDate || (leave as any).endDate} ({leave.totalDays ?? (leave as any).days} days)</p>
                         </div>
                       </div>
                       <span className={cn(

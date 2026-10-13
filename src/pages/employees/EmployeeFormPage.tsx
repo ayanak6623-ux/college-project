@@ -113,21 +113,27 @@ export const EmployeeFormPage = () => {
     setCurrentStep((prev) => prev - 1);
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const data = getValues();
-    if (isEdit && id) {
-      updateEmployee(id, data as any);
-      toast.success('Employee updated successfully!');
-    } else {
-      const empId = `EMP-00${employees.length + 1}`.padStart(8, '0');
-      addEmployee({
-        ...(data as any),
-        empId,
-        status: 'Active'
-      });
-      toast.success('Employee added successfully!');
+    try {
+      if (isEdit && id) {
+        await updateEmployee(id, data as any);
+        toast.success('Employee updated successfully!');
+      } else {
+        const nextNum = employees.length + 1;
+        const empId = `EMP-${String(nextNum).padStart(3, '0')}`;
+        await addEmployee({
+          ...(data as any),
+          empId,
+          status: 'Active'
+        });
+        toast.success('Employee added and saved to database successfully!');
+      }
+      navigate('/employees');
+    } catch (err: any) {
+      toast.error(err.message || 'Saved locally; could not reach database server.');
+      navigate('/employees');
     }
-    navigate('/employees');
   };
 
   // Form rendering sections

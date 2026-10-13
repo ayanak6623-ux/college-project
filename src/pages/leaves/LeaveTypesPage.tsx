@@ -147,7 +147,7 @@ export const LeaveTypesPage = () => {
                   </div>
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-center items-start">
                     <span className="text-xs text-slate-500 mb-1">Payment Type</span>
-                    <Badge variant={lt.isPaid ? 'success' : 'secondary'} className="px-2 py-0.5">{lt.isPaid ? 'Paid' : 'Unpaid'}</Badge>
+                    <Badge variant={lt.isPaid ? 'success' : 'outline'} className="px-2 py-0.5">{lt.isPaid ? 'Paid' : 'Unpaid'}</Badge>
                   </div>
                 </div>
 

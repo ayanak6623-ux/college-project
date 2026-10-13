@@ -25,6 +25,7 @@ export interface Employee {
   shiftId: string;
 
   loginEmail?: string;
+  password?: string;
   role: 'Employee' | 'HR Admin' | 'Manager';
   status: EmployeeStatus;
   

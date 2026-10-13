@@ -100,7 +100,7 @@ export const EmployeeProfilePage = () => {
 
   // Leave Deductions Breakdown ("leaves ka kithna salary me minus hua")
   const empLeaves = leaveRequests.filter(
-    r => (r.employeeId === id || r.employeeId === employee?.empId || r.employee === `${employee?.firstName} ${employee?.lastName}`) &&
+    r => (r.employeeId === id || r.employeeId === employee?.empId || (r as any).employee === `${employee?.firstName} ${employee?.lastName}`) &&
          r.status === 'Approved'
   );
   const unpaidLeavesList = empLeaves.filter(r => {
@@ -772,7 +772,7 @@ export const EmployeeProfilePage = () => {
                         <td className="py-3 px-4 font-bold text-emerald-600">₹{netInHandPay.toLocaleString('en-IN')}</td>
                         <td className="py-3 px-4 text-slate-500">{paymentDate}</td>
                         <td className="py-3 px-4">
-                          <Badge variant={paymentStatus === 'Paid' ? 'success' : paymentStatus === 'Processing' ? 'secondary' : 'warning'}>
+                          <Badge variant={paymentStatus === 'Paid' ? 'success' : paymentStatus === 'Processing' ? 'default' : 'warning'}>
                             {paymentStatus}
                           </Badge>
                         </td>

@@ -48,9 +48,14 @@ const CountUp = ({ end }: { end: number }) => {
 
 export const AdminDashboard = () => {
   const { user } = useAuthStore();
-  const { employees } = useEmployeeStore();
+  const { employees, fetchEmployees, getEmployee } = useEmployeeStore();
   const { attendanceRecords } = useAttendanceStore();
-  const { leaveRequests, updateLeaveRequestStatus } = useLeaveStore();
+  const { leaveRequests, leaveTypes, updateLeaveRequestStatus } = useLeaveStore();
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
   const todayDate = new Date();
   const todayStr = todayDate.toISOString().split('T')[0];
   const today = todayDate.toLocaleDateString('en-US', { 
@@ -264,29 +269,35 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {leaveRequests.filter(r => r.status === 'Pending').slice(0, 5).map((leave) => (
-                  <div key={leave.id} className="flex items-start justify-between p-3 rounded-xl border border-border bg-slate-50 dark:bg-slate-800/30">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{leave.employee}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{leave.type} ({leave.days} days)</p>
-                      <p className="text-xs text-slate-500 mt-1">{leave.startDate} to {leave.endDate}</p>
+                {leaveRequests.filter(r => r.status === 'Pending').slice(0, 5).map((leave) => {
+                  const emp = getEmployee(leave.employeeId);
+                  const empName = emp ? `${emp.firstName} ${emp.lastName}` : (leave as any).employee || 'Employee';
+                  const lt = leaveTypes.find(t => t.id === leave.leaveTypeId);
+                  const ltName = lt ? lt.name : (leave as any).type || 'Leave';
+                  return (
+                    <div key={leave.id} className="flex items-start justify-between p-3 rounded-xl border border-border bg-slate-50 dark:bg-slate-800/30">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{empName}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{ltName} ({leave.totalDays ?? (leave as any).days} days)</p>
+                        <p className="text-xs text-slate-500 mt-1">{leave.fromDate ?? (leave as any).startDate} to {leave.toDate ?? (leave as any).endDate}</p>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button 
+                          onClick={() => updateLeaveRequestStatus(leave.id, 'Approved', 'HR Admin')}
+                          className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button 
+                          onClick={() => updateLeaveRequestStatus(leave.id, 'Rejected', 'HR Admin')}
+                          className="p-1.5 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-1.5">
-                      <button 
-                        onClick={() => updateLeaveRequestStatus(leave.id, 'Approved')}
-                        className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button 
-                        onClick={() => updateLeaveRequestStatus(leave.id, 'Rejected')}
-                        className="p-1.5 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {leaveRequests.filter(r => r.status === 'Pending').length === 0 && (
                   <p className="text-sm text-slate-500 text-center py-4">No pending requests</p>
                 )}
