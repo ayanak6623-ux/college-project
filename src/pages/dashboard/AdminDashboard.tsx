@@ -52,14 +52,31 @@ export const AdminDashboard = () => {
   const { attendanceRecords } = useAttendanceStore();
   const { leaveRequests, leaveTypes, updateLeaveRequestStatus } = useLeaveStore();
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
   useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  const todayDate = new Date();
-  const todayStr = todayDate.toISOString().split('T')[0];
-  const today = todayDate.toLocaleDateString('en-US', { 
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const greeting = useMemo(() => {
+    const hours = currentTime.getHours();
+    if (hours >= 4 && hours < 12) return { text: 'Good morning', icon: '🌅' };
+    if (hours >= 12 && hours < 17) return { text: 'Good afternoon', icon: '☀️' };
+    if (hours >= 17 && hours < 22) return { text: 'Good evening', icon: '🌇' };
+    return { text: 'Good night', icon: '🌙' };
+  }, [currentTime]);
+
+  const todayStr = currentTime.toISOString().split('T')[0];
+  const today = currentTime.toLocaleDateString('en-US', { 
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+  });
+  const timeFormatted = currentTime.toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
   });
 
   const totalEmployees = employees.length;
@@ -101,15 +118,23 @@ export const AdminDashboard = () => {
         
         <div className="z-10">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-1 tracking-tight flex flex-wrap items-baseline gap-x-2">
-            <span>Good morning,</span>
+            <span>{greeting.text},</span>
             <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-secondary-600 to-indigo-700 dark:from-indigo-200 dark:via-purple-200 dark:to-pink-200 drop-shadow-sm">
               {user?.name || 'HR Admin'}
             </span>
+            <span className="text-xl inline-block select-none">{greeting.icon}</span>
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 flex items-center">
-            <Calendar size={16} className="mr-2" />
-            {today}
-          </p>
+          <div className="flex flex-wrap items-center gap-3 text-slate-500 dark:text-slate-400 mt-1">
+            <p className="flex items-center text-sm font-medium">
+              <Calendar size={15} className="mr-1.5 text-primary-500" />
+              {today}
+            </p>
+            <span className="hidden sm:inline-block w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+            <p className="flex items-center text-sm font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-lg border border-border/50">
+              <Clock size={14} className="mr-1.5 text-secondary-500" />
+              {timeFormatted}
+            </p>
+          </div>
         </div>
       </div>
 

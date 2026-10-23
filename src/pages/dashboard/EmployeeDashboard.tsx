@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, Clock, CheckCircle2, XCircle, 
@@ -43,6 +43,14 @@ export const EmployeeDashboard = () => {
     const secs = seconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const greeting = useMemo(() => {
+    const hours = currentTime.getHours();
+    if (hours >= 4 && hours < 12) return { text: 'Good morning', icon: '🌅' };
+    if (hours >= 12 && hours < 17) return { text: 'Good afternoon', icon: '☀️' };
+    if (hours >= 17 && hours < 22) return { text: 'Good evening', icon: '🌇' };
+    return { text: 'Good night', icon: '🌙' };
+  }, [currentTime]);
 
   const todayStr = currentTime.toLocaleDateString('en-US', { 
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
@@ -128,10 +136,11 @@ export const EmployeeDashboard = () => {
               Employee Portal
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold mb-3 tracking-tight flex flex-wrap items-baseline gap-x-3 leading-tight">
-              <span className="text-white drop-shadow-sm">Hello,</span>
+              <span className="text-white drop-shadow-sm">{greeting.text},</span>
               <span className="relative inline-block font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-purple-200 drop-shadow-[0_2px_16px_rgba(165,180,252,0.65)]">
                 {user?.name || 'Employee'}
               </span>
+              <span className="text-2xl sm:text-3xl inline-block select-none">{greeting.icon}</span>
             </h2>
             <div className="flex flex-wrap items-center gap-3 text-slate-200">
               <span className="flex items-center bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-sm font-medium shadow-sm">
