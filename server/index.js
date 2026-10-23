@@ -5,8 +5,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import employeeRoutes from './routes/employees.js';
+import attendanceRoutes from './routes/attendance.js';
 
 import Employee from './models/Employee.js';
+import Attendance from './models/Attendance.js';
 
 // Setup __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -126,11 +128,55 @@ async function seedDefaultEmployees() {
   }
 }
 
+// Seed default attendance if attendance collection is empty
+async function seedDefaultAttendance() {
+  try {
+    const count = await Attendance.countDocuments();
+    if (count === 0) {
+      console.log('🌱 Seeding initial attendance records into MongoDB collection "attendance"...');
+      const employees = await Employee.find();
+      const recordsToSeed = [];
+      const today = new Date();
+
+      // Seed for the last 7 days so trends are immediately visible
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+
+        employees.forEach((emp, index) => {
+          if (isWeekend) return;
+          const status = index % 5 === 0 ? 'Late' : index % 7 === 0 ? 'On Leave' : 'Present';
+          recordsToSeed.push({
+            employeeId: emp.empId || emp._id.toString(),
+            date: dateStr,
+            shiftId: emp.shiftId || 'shift-1',
+            checkIn: status === 'Present' ? '09:00' : status === 'Late' ? '09:35' : undefined,
+            checkOut: status === 'On Leave' ? undefined : '18:00',
+            totalHours: status === 'Present' ? 9 : status === 'Late' ? 8.4 : 0,
+            status,
+            notes: `Recorded ${status} for ${emp.firstName}`
+          });
+        });
+      }
+
+      if (recordsToSeed.length > 0) {
+        await Attendance.insertMany(recordsToSeed);
+        console.log(`✅ Seeded ${recordsToSeed.length} attendance records into MongoDB "attendance" collection!`);
+      }
+    }
+  } catch (err) {
+    console.error('Error seeding attendance:', err.message);
+  }
+}
+
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
   .then(async () => {
     console.log('✅ Successfully connected to MongoDB Database!');
     await seedDefaultEmployees();
+    await seedDefaultAttendance();
   })
   .catch((error) => {
     console.error('❌ Error connecting to MongoDB:', error.message);
@@ -143,6 +189,7 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/employees', employeeRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

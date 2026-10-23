@@ -88,12 +88,17 @@ const generateMockAttendance = (): AttendanceRecord[] => {
   return records;
 };
 
+const API_URL = 'http://localhost:5000/api/attendance';
+
 interface AttendanceState {
   shifts: Shift[];
   settings: WorkSettings;
   holidays: Holiday[];
   attendanceRecords: AttendanceRecord[];
+  isLoading: boolean;
   
+  fetchAttendance: () => Promise<void>;
+  saveAttendanceRecord: (record: Omit<AttendanceRecord, 'id'> & { id?: string }) => Promise<void>;
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (id: string, shift: Partial<Shift>) => void;
   deleteShift: (id: string) => void;
@@ -103,17 +108,56 @@ interface AttendanceState {
   addHoliday: (holiday: Omit<Holiday, 'id'>) => void;
   deleteHoliday: (id: string) => void;
   
-  updateAttendance: (id: string, record: Partial<AttendanceRecord>) => void;
+  updateAttendance: (id: string, record: Partial<AttendanceRecord>) => Promise<void>;
   markLeave: (employeeId: string, fromDate: string, toDate: string) => void;
 }
 
 export const useAttendanceStore = create<AttendanceState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       shifts: defaultShifts,
       settings: defaultSettings,
       holidays: defaultHolidays,
       attendanceRecords: generateMockAttendance(),
+      isLoading: false,
+
+      fetchAttendance: async () => {
+        try {
+          set({ isLoading: true });
+          const res = await fetch(API_URL);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              set({ attendanceRecords: data });
+            }
+          }
+        } catch (err) {
+          console.warn('Backend attendance fetch notice:', err);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      saveAttendanceRecord: async (record) => {
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record),
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            set((state) => ({
+              attendanceRecords: [
+                saved,
+                ...state.attendanceRecords.filter(r => !(r.employeeId === saved.employeeId && r.date === saved.date))
+              ]
+            }));
+          }
+        } catch (err) {
+          console.error('Error saving attendance record to database:', err);
+        }
+      },
       
       addShift: (shift) => set((state) => ({ shifts: [...state.shifts, { ...shift, id: uuidv4() }] })),
       updateShift: (id, updated) => set((state) => ({ shifts: state.shifts.map(s => s.id === id ? { ...s, ...updated } : s) })),
@@ -124,9 +168,21 @@ export const useAttendanceStore = create<AttendanceState>()(
       addHoliday: (holiday) => set((state) => ({ holidays: [...state.holidays, { ...holiday, id: uuidv4() }] })),
       deleteHoliday: (id) => set((state) => ({ holidays: state.holidays.filter(h => h.id !== id) })),
       
-      updateAttendance: (id, record) => set((state) => ({
-        attendanceRecords: state.attendanceRecords.map(a => a.id === id ? { ...a, ...record } : a)
-      })),
+      updateAttendance: async (id, record) => {
+        set((state) => ({
+          attendanceRecords: state.attendanceRecords.map(a => a.id === id ? { ...a, ...record } : a)
+        }));
+
+        try {
+          await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(record),
+          });
+        } catch (err) {
+          console.warn('Could not sync attendance update to database:', err);
+        }
+      },
 
       markLeave: (employeeId, fromDate, toDate) => set((state) => {
         const newRecords = [...state.attendanceRecords];

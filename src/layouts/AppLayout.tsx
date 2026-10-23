@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, useThemeStore } from '../store';
 import { useEmployeeStore } from '../store/employeeStore';
+import { useAttendanceStore } from '../store/attendanceStore';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 
@@ -13,10 +14,12 @@ export const AppLayout = () => {
   const location = useLocation();
 
   const { fetchEmployees } = useEmployeeStore();
+  const { fetchAttendance } = useAttendanceStore();
 
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]);
+    fetchAttendance();
+  }, [fetchEmployees, fetchAttendance]);
 
   useEffect(() => {
     const handleResize = () => {
