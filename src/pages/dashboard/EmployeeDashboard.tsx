@@ -123,16 +123,23 @@ export const EmployeeDashboard = () => {
         
         <div className="z-10 text-white w-full md:w-1/2">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-3 tracking-tight">
-              Hello, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-300 to-secondary-300">{user?.name || 'Employee'}</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-indigo-200 text-xs font-semibold tracking-wider uppercase mb-3 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Employee Portal
+            </div>
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-3 tracking-tight flex flex-wrap items-baseline gap-x-3 leading-tight">
+              <span className="text-white drop-shadow-sm">Hello,</span>
+              <span className="relative inline-block font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-purple-200 drop-shadow-[0_2px_16px_rgba(165,180,252,0.65)]">
+                {user?.name || 'Employee'}
+              </span>
             </h2>
-            <div className="flex items-center gap-4 text-slate-300">
-              <span className="flex items-center bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 text-sm font-medium">
-                <Calendar size={16} className="mr-2 text-primary-300" />
+            <div className="flex flex-wrap items-center gap-3 text-slate-200">
+              <span className="flex items-center bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-sm font-medium shadow-sm">
+                <Calendar size={16} className="mr-2 text-indigo-300" />
                 {todayStr}
               </span>
-              <span className="flex items-center bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 text-sm font-medium">
-                <Clock size={16} className="mr-2 text-secondary-300" />
+              <span className="flex items-center bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15 text-sm font-medium shadow-sm">
+                <Clock size={16} className="mr-2 text-purple-300" />
                 {timeStr}
               </span>
             </div>

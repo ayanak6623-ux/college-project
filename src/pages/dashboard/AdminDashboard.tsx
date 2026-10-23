@@ -100,8 +100,11 @@ export const AdminDashboard = () => {
         <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-br from-primary-400/20 to-secondary-500/20 rounded-full blur-[60px] pointer-events-none" />
         
         <div className="z-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-1">
-            Good morning, <span className="text-gradient">{user?.name || 'HR Admin'}</span>
+          <h2 className="text-2xl md:text-3xl font-extrabold mb-1 tracking-tight flex flex-wrap items-baseline gap-x-2">
+            <span>Good morning,</span>
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-secondary-600 to-indigo-700 dark:from-indigo-200 dark:via-purple-200 dark:to-pink-200 drop-shadow-sm">
+              {user?.name || 'HR Admin'}
+            </span>
           </h2>
           <p className="text-slate-500 dark:text-slate-400 flex items-center">
             <Calendar size={16} className="mr-2" />
