@@ -102,10 +102,46 @@ export const AdminDashboard = () => {
   const pendingRequestsCount = leaveRequests.filter(r => r.status === 'Pending').length;
 
   const statCards = [
-    { title: 'Total Employees', value: totalEmployees, icon: Users, color: 'text-primary-600 dark:text-primary-400', bg: 'bg-primary-100 dark:bg-primary-900/30' },
-    { title: 'Present Today', value: presentToday, icon: UserCheck, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
-    { title: 'On Leave', value: onLeave, icon: UserX, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-    { title: 'Pending Requests', value: pendingRequestsCount, icon: Clock, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/30' },
+    { 
+      title: 'Total Employees', 
+      value: totalEmployees, 
+      icon: Users, 
+      color: 'text-indigo-600 dark:text-indigo-400', 
+      bg: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60',
+      glow: 'bg-indigo-500',
+      badge: 'Workforce',
+      badgeStyle: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800/60'
+    },
+    { 
+      title: 'Present Today', 
+      value: presentToday, 
+      icon: UserCheck, 
+      color: 'text-emerald-600 dark:text-emerald-400', 
+      bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60',
+      glow: 'bg-emerald-500',
+      badge: presentToday > 0 ? `${presentToday} Active` : 'Shift Active',
+      badgeStyle: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800/60'
+    },
+    { 
+      title: 'On Leave', 
+      value: onLeave, 
+      icon: UserX, 
+      color: 'text-amber-600 dark:text-amber-400', 
+      bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60',
+      glow: 'bg-amber-500',
+      badge: 'Scheduled',
+      badgeStyle: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60'
+    },
+    { 
+      title: 'Pending Requests', 
+      value: pendingRequestsCount, 
+      icon: Clock, 
+      color: 'text-rose-600 dark:text-rose-400', 
+      bg: 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60',
+      glow: 'bg-rose-500',
+      badge: pendingRequestsCount > 0 ? `${pendingRequestsCount} Pending` : 'All Clear',
+      badgeStyle: pendingRequestsCount > 0 ? 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800/60 animate-pulse' : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+    },
   ];
 
   const recentHires = [...employees].sort((a, b) => new Date(b.joiningDate).getTime() - new Date(a.joiningDate).getTime()).slice(0, 4);
@@ -138,28 +174,40 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {/* Stats Cards - Perfectly Aligned & Symmetrical */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
         {statCards.map((stat, i) => (
           <motion.div
             key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: i * 0.08, duration: 0.4 }}
+            className="h-full"
           >
-            <Card className="hover:-translate-y-1 transition-transform duration-300">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{stat.title}</p>
-                  <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                    <CountUp end={stat.value} />
-                  </h3>
+            <div className="h-full relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-5 flex flex-col justify-between group">
+              {/* Subtle ambient colored corner glow */}
+              <div className={cn("absolute -top-10 -right-10 w-24 h-24 rounded-full blur-2xl pointer-events-none opacity-20 group-hover:opacity-50 transition-opacity", stat.glow)} />
+              
+              {/* Top Row: Title + Themed Icon */}
+              <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                  {stat.title}
+                </span>
+                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-transform duration-300 group-hover:scale-110 shadow-sm", stat.bg)}>
+                  <stat.icon size={19} className={stat.color} />
                 </div>
-                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", stat.bg)}>
-                  <stat.icon size={24} className={stat.color} />
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Bottom Row: Large Number + Pill Badge (Exact same baseline across all cards) */}
+              <div className="flex items-baseline justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70 relative z-10">
+                <h3 className="text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-mono tabular-nums leading-none">
+                  <CountUp end={stat.value} />
+                </h3>
+                <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 border leading-tight", stat.badgeStyle)}>
+                  {stat.badge}
+                </span>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
