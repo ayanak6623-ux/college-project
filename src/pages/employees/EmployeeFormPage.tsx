@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronRight, ChevronLeft, UploadCloud, User, Briefcase, Clock, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useEmployeeStore } from '../../store/employeeStore';
+import { useNotificationStore } from '../../store';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
@@ -60,6 +61,7 @@ export const EmployeeFormPage = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const { addEmployee, updateEmployee, getEmployee, employees } = useEmployeeStore();
+  const { addNotification } = useNotificationStore();
   const { shifts } = useAttendanceStore();
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -94,7 +96,7 @@ export const EmployeeFormPage = () => {
 
   const currentSchema = formSchemas[currentStep] || z.any(); // Review step uses z.any
   
-  const { register, handleSubmit, trigger, getValues, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, trigger, getValues, setValue, formState: { errors } } = useForm<any>({
     resolver: (zodResolver as any)(currentSchema),
     defaultValues,
     mode: 'onChange'
@@ -116,9 +118,14 @@ export const EmployeeFormPage = () => {
   const onSubmit = async () => {
     const data = getValues();
     try {
+      // Dynamically detect if user is an HR Admin or based on department/role
+      const isHR = data.role === 'HR Admin' || data.department === 'HR' || data.role === 'HR';
+      const isManager = data.role === 'Manager';
+      const roleTitle = isHR ? 'HR Admin' : isManager ? 'Manager' : (data.role || 'Employee');
+
       if (isEdit && id) {
         await updateEmployee(id, data as any);
-        toast.success('Employee updated successfully!');
+        toast.success(`${roleTitle} updated successfully!`);
       } else {
         const nextNum = employees.length + 1;
         const empId = `EMP-${String(nextNum).padStart(3, '0')}`;
@@ -127,7 +134,14 @@ export const EmployeeFormPage = () => {
           empId,
           status: 'Active'
         });
-        toast.success('Employee added and saved to database successfully!');
+        toast.success(`${roleTitle} added and saved to database successfully!`);
+        addNotification({
+          title: `New ${roleTitle} Registered`,
+          message: `${data.firstName} ${data.lastName} registered in ${data.department} department as ${data.designation || roleTitle}.`,
+          type: isHR ? 'system' : 'employee',
+          link: '/employees',
+          priority: isHR ? 'high' : 'medium'
+        });
       }
       navigate('/employees');
     } catch (err: any) {
@@ -153,7 +167,21 @@ export const EmployeeFormPage = () => {
 
   const renderJob = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Select label="Department" options={['Engineering','Sales','Marketing','HR','Operations'].map(d=>({label:d,value:d}))} {...register('department')} error={errors.department?.message as string} />
+      <Select 
+        label="Department" 
+        options={['Engineering','Sales','Marketing','HR','Operations'].map(d=>({label:d,value:d}))} 
+        {...register('department', {
+          onChange: (e) => {
+            if (e.target.value === 'HR') {
+              const currentRole = getValues('role');
+              if (!currentRole || currentRole === 'Employee') {
+                setValue('role', 'HR Admin');
+              }
+            }
+          }
+        })} 
+        error={errors.department?.message as string} 
+      />
       <Input label="Designation" {...register('designation')} error={errors.designation?.message as string} />
       <Input label="Joining Date" type="date" {...register('joiningDate')} error={errors.joiningDate?.message as string} />
       <Select label="Employment Type" options={['Full-time','Part-time','Intern','Contract'].map(d=>({label:d,value:d}))} {...register('employmentType')} error={errors.employmentType?.message as string} />
@@ -191,7 +219,21 @@ export const EmployeeFormPage = () => {
       </div>
       <Input label="Portal Login Email" type="email" {...register('loginEmail')} error={errors.loginEmail?.message as string} />
       <Input label="Initial Password" type="text" {...register('password')} error={errors.password?.message as string} placeholder="Create a secure password" />
-      <Select label="System Role" options={['Employee','HR Admin','Manager'].map(d=>({label:d,value:d}))} {...register('role')} error={errors.role?.message as string} />
+      <Select 
+        label="System Role" 
+        options={['Employee','HR Admin','Manager'].map(d=>({label:d,value:d}))} 
+        {...register('role', {
+          onChange: (e) => {
+            if (e.target.value === 'HR Admin') {
+              const currentDept = getValues('department');
+              if (!currentDept || currentDept === 'Engineering') {
+                setValue('department', 'HR');
+              }
+            }
+          }
+        })} 
+        error={errors.role?.message as string} 
+      />
     </div>
   );
 
