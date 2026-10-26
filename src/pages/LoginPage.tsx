@@ -23,12 +23,46 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const DEMO_ACCOUNTS = [
-  { id: 'hr', label: 'HR Admin', email: 'hr@company.com', password: 'Admin@123', role: 'HR Admin', icon: ShieldCheck, badge: 'Full Admin' },
-  { id: 'presales', label: 'Pre Sales', email: 'presales@company.com', password: 'Admin@123', role: 'Employee', icon: User, badge: 'Employee' },
-  { id: 'sales', label: 'Sales', email: 'sales@company.com', password: 'Admin@123', role: 'Employee', icon: MapPin, badge: 'Field Rep' },
-  { id: 'hybrid', label: 'Hybrid', email: 'hybrid@company.com', password: 'Admin@123', role: 'Employee', icon: Users, badge: 'Hybrid Staff' },
-  { id: 'manager', label: 'Manager', email: 'manager@company.com', password: 'Admin@123', role: 'Manager', icon: Briefcase, badge: 'Manager' },
+const ROLE_ACCOUNTS = [
+  { 
+    id: 'hr-admin', 
+    label: 'HR Admin', 
+    email: 'hr@company.com', 
+    password: 'Admin@123', 
+    role: 'HR Admin', 
+    icon: ShieldCheck, 
+    badge: 'Full Admin',
+    desc: 'Full administrative access & system controls',
+    badgeClass: 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/50',
+    iconClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/40',
+    activeClass: 'bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700/60'
+  },
+  { 
+    id: 'employee', 
+    label: 'Employee', 
+    email: 'employee@company.com', 
+    password: 'Admin@123', 
+    role: 'Employee', 
+    icon: User, 
+    badge: 'Employee',
+    desc: 'Self-service portal, leaves & attendance',
+    badgeClass: 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/50',
+    iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-800/40',
+    activeClass: 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60'
+  },
+  { 
+    id: 'manager', 
+    label: 'Manager', 
+    email: 'manager@company.com', 
+    password: 'Admin@123', 
+    role: 'Manager', 
+    icon: Briefcase, 
+    badge: 'Manager',
+    desc: 'Team approvals, shifts & department oversight',
+    badgeClass: 'bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/50',
+    iconClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/40 dark:border-purple-800/40',
+    activeClass: 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-300 dark:border-purple-700/60'
+  },
 ];
 
 export const LoginPage = () => {
@@ -42,29 +76,14 @@ export const LoginPage = () => {
   React.useEffect(() => {
     fetchEmployees();
   }, [fetchEmployees]);
-  
-  const allAccounts = React.useMemo(() => {
-    const dynamicAccounts = employees
-      .filter((emp: any) => emp.password)
-      .map((emp: any) => ({
-        id: emp.id,
-        label: `${emp.firstName} ${emp.lastName}`,
-        email: emp.loginEmail || emp.email,
-        password: emp.password,
-        role: emp.role,
-        badge: emp.empId || emp.role,
-        icon: emp.role === 'HR Admin' ? ShieldCheck : emp.role === 'Manager' ? Briefcase : User,
-      }));
-    return [...DEMO_ACCOUNTS, ...dynamicAccounts];
-  }, [employees]);
 
-  const [selectedAccount, setSelectedAccount] = useState(allAccounts[0]);
+  const [selectedAccount, setSelectedAccount] = useState(ROLE_ACCOUNTS[0]);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: allAccounts[0].email,
-      password: allAccounts[0].password,
+      email: ROLE_ACCOUNTS[0].email,
+      password: ROLE_ACCOUNTS[0].password,
       rememberMe: true,
     }
   });
@@ -75,9 +94,11 @@ export const LoginPage = () => {
 
     const inputVal = data.email.trim().toLowerCase();
 
-    // Check against demo accounts
-    const defaultAcc = DEMO_ACCOUNTS.find(
-      acc => acc.email.toLowerCase() === inputVal || acc.id.toLowerCase() === inputVal
+    // Check against role accounts
+    const defaultAcc = ROLE_ACCOUNTS.find(
+      acc => acc.email.toLowerCase() === inputVal || 
+             acc.id.toLowerCase() === inputVal ||
+             (acc.id === 'employee' && (inputVal === 'presales@company.com' || inputVal === 'employee@company.com' || inputVal === 'sales@company.com' || inputVal === 'hybrid@company.com'))
     );
     const isDefaultAuth = data.password === 'Admin@123' && Boolean(defaultAcc);
     
@@ -154,30 +175,41 @@ export const LoginPage = () => {
 
           {/* Quick Portal / Role Switcher Dropdown */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Select Portal / Account
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Select Portal / Account
+              </label>
+              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                3 Roles
+              </span>
+            </div>
             <div className="relative">
+              {/* Outside click backdrop */}
+              {isDropdownOpen && (
+                <div 
+                  className="fixed inset-0 z-40 bg-transparent" 
+                  onClick={() => setIsDropdownOpen(false)} 
+                />
+              )}
+
               <button 
                 type="button" 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className={cn(
-                  "w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50/80 dark:bg-slate-800/50 border rounded-xl focus:outline-none transition-all text-xs sm:text-sm font-semibold",
+                  "relative z-40 w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50/90 dark:bg-slate-800/60 border rounded-xl focus:outline-none transition-all text-xs sm:text-sm font-semibold shadow-sm",
                   isDropdownOpen 
                     ? "border-primary-500 ring-2 ring-primary-500/20 text-slate-900 dark:text-white bg-white dark:bg-slate-800" 
-                    : "border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-slate-300 dark:hover:border-slate-700"
+                    : "border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/60 dark:hover:bg-slate-800/80"
                 )}
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="w-7 h-7 rounded-lg bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-600 dark:text-primary-400 shrink-0">
+                  <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", selectedAccount.iconClass)}>
                     <selectedAccount.icon size={15} />
                   </div>
-                  <span className="truncate">{selectedAccount.label}</span>
-                  {selectedAccount.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                      {selectedAccount.badge}
-                    </span>
-                  )}
+                  <span className="truncate text-slate-900 dark:text-white font-bold">{selectedAccount.label}</span>
+                  <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-md border", selectedAccount.badgeClass)}>
+                    {selectedAccount.badge}
+                  </span>
                 </div>
                 <ChevronDown size={16} className={cn("text-slate-400 transition-transform shrink-0 ml-2", isDropdownOpen && "rotate-180")} />
               </button>
@@ -185,14 +217,16 @@ export const LoginPage = () => {
               <AnimatePresence>
                 {isDropdownOpen && (
                   <motion.div 
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden"
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl shadow-slate-900/15 dark:shadow-black/60 z-50 p-1.5 space-y-1"
                   >
-                    <div className="p-1 max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {allAccounts.map((account) => (
+                    {ROLE_ACCOUNTS.map((account) => {
+                      const isSelected = selectedAccount.id === account.id;
+                      const IconComponent = account.icon;
+                      return (
                         <button
                           key={account.id}
                           type="button"
@@ -203,27 +237,41 @@ export const LoginPage = () => {
                             setValue('password', account.password, { shouldValidate: true });
                           }}
                           className={cn(
-                            "w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm font-medium transition-colors rounded-lg",
-                            selectedAccount.id === account.id 
-                              ? "bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-bold" 
-                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                            "w-full flex items-center justify-between px-3 py-2.5 text-xs sm:text-sm rounded-xl transition-all group text-left",
+                            isSelected 
+                              ? cn("border font-semibold", account.activeClass) 
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/70 border border-transparent"
                           )}
                         >
-                          <div className="flex items-center gap-2.5 truncate">
+                          <div className="flex items-center gap-3 truncate">
                             <div className={cn(
-                              "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
-                              selectedAccount.id === account.id ? "bg-primary-500 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
+                              account.iconClass
                             )}>
-                              <account.icon size={13} />
+                              <IconComponent size={16} />
                             </div>
-                            <span className="truncate">{account.label}</span>
+                            <div className="flex flex-col truncate">
+                              <div className="flex items-center gap-2">
+                                <span className={cn("truncate font-bold", isSelected ? "text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-200")}>
+                                  {account.label}
+                                </span>
+                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", account.badgeClass)}>
+                                  {account.badge}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                                {account.desc}
+                              </span>
+                            </div>
                           </div>
-                          {selectedAccount.id === account.id && (
-                            <Check size={14} className="text-primary-600 dark:text-primary-400 shrink-0 ml-2" />
+                          {isSelected && (
+                            <div className="w-5 h-5 rounded-full bg-primary-500/15 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0 ml-2">
+                              <Check size={13} className="stroke-[2.5]" />
+                            </div>
                           )}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -240,7 +288,7 @@ export const LoginPage = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="presales@company.com or EMP-002"
+                  placeholder="hr@company.com or employee@company.com"
                   className={cn(
                     "flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all",
                     errors.email && "border-rose-500 focus:border-rose-500"
