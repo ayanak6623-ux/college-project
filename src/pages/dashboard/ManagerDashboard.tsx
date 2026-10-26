@@ -30,14 +30,7 @@ export const ManagerDashboard = () => {
 
   const [activeTab, setActiveTab] = useState<'home' | 'attendance' | 'tasks' | 'me'>('home');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
-  const [copilotQuery, setCopilotQuery] = useState('');
-  const [copilotResponses, setCopilotResponses] = useState<{ query: string; answer: string }[]>([
-    {
-      query: 'What is today’s team attendance rate?',
-      answer: 'Today 92% of your team is present on time. 1 team member is currently on approved annual leave.'
-    }
-  ]);
+
 
   // Tasks state
   const [tasks, setTasks] = useState([
@@ -128,23 +121,7 @@ export const ManagerDashboard = () => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
-  const handleAskCopilot = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!copilotQuery.trim()) return;
-    
-    let answer = 'Analyzing team metrics: All operations are running within optimal parameters.';
-    const q = copilotQuery.toLowerCase();
-    if (q.includes('attendance') || q.includes('present')) {
-      answer = `Today, ${todayAttendance.present} out of ${todayAttendance.total} team members have checked in with verified biometric stamps.`;
-    } else if (q.includes('leave') || q.includes('absent')) {
-      answer = `Currently ${todayAttendance.onLeave} team member has an approved leave. Next upcoming holiday is in 12 days.`;
-    } else if (q.includes('staff') || q.includes('employee') || q.includes('team')) {
-      answer = `You have ${teamMembers.length} active team members reporting directly to your department.`;
-    }
 
-    setCopilotResponses([{ query: copilotQuery, answer }, ...copilotResponses]);
-    setCopilotQuery('');
-  };
 
   return (
     <div className="space-y-6 pb-12 max-w-7xl mx-auto">
@@ -459,27 +436,46 @@ export const ManagerDashboard = () => {
                 </CardContent>
               </Card>
 
-              {/* AI Copilot Card */}
-              <div className="rounded-2xl p-5 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 text-white border border-indigo-800/40 shadow-xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase tracking-wider">
-                    <Sparkles size={11} className="text-indigo-400" />
-                    AI COPILOT
-                  </div>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              {/* Quick Shortcuts Card */}
+              <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 p-4 space-y-3">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Quick Actions & Hub
+                </CardTitle>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button 
+                    onClick={() => setActiveTab('tasks')}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-left border border-slate-200/60 dark:border-slate-700/60 transition-colors group"
+                  >
+                    <CheckCircle2 size={16} className="text-indigo-600 mb-1" />
+                    <span className="font-bold block text-slate-900 dark:text-white">My Tasks</span>
+                    <span className="text-[10px] text-slate-400">View team to-dos</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('attendance')}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left border border-slate-200/60 dark:border-slate-700/60 transition-colors group"
+                  >
+                    <Clock size={16} className="text-emerald-600 mb-1" />
+                    <span className="font-bold block text-slate-900 dark:text-white">Attendance</span>
+                    <span className="text-[10px] text-slate-400">Check live logs</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('me')}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left border border-slate-200/60 dark:border-slate-700/60 transition-colors group"
+                  >
+                    <Receipt size={16} className="text-amber-600 mb-1" />
+                    <span className="font-bold block text-slate-900 dark:text-white">My Payslips</span>
+                    <span className="text-[10px] text-slate-400">Salary history</span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('me')}
+                    className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-left border border-slate-200/60 dark:border-slate-700/60 transition-colors group"
+                  >
+                    <FileText size={16} className="text-purple-600 mb-1" />
+                    <span className="font-bold block text-slate-900 dark:text-white">Policies</span>
+                    <span className="text-[10px] text-slate-400">Company rules</span>
+                  </button>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white">Ask about workforce</h4>
-                  <p className="text-xs text-slate-300 mt-0.5">Instant intelligence on team leaves, productivity, shift hours & attendance.</p>
-                </div>
-                <Button
-                  onClick={() => setIsCopilotOpen(true)}
-                  className="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold text-xs py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2"
-                >
-                  <Sparkles size={14} />
-                  Open PeopleHub AI
-                </Button>
-              </div>
+              </Card>
             </div>
           </div>
         </div>
@@ -675,63 +671,7 @@ export const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* AI Copilot Drawer */}
-      <AnimatePresence>
-        {isCopilotOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-end">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsCopilotOpen(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="relative w-full max-w-md h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col z-10"
-            >
-              <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-indigo-950 text-white">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={18} className="text-cyan-400" />
-                  <div>
-                    <h3 className="font-extrabold text-sm">PeopleHub AI Workforce Copilot</h3>
-                    <p className="text-[10px] text-indigo-300">Manager Decision Intelligence</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsCopilotOpen(false)} className="text-slate-300 hover:text-white">✕</button>
-              </div>
 
-              <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                {copilotResponses.map((item, idx) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[85%] ml-auto">
-                      {item.query}
-                    </div>
-                    <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/40 text-xs text-indigo-950 dark:text-indigo-200 max-w-[90%]">
-                      {item.answer}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <form onSubmit={handleAskCopilot} className="p-4 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-                <Input
-                  value={copilotQuery}
-                  onChange={(e) => setCopilotQuery(e.target.value)}
-                  placeholder="Ask about team attendance, leaves..."
-                  className="rounded-xl text-xs"
-                />
-                <Button type="submit" className="bg-indigo-600 text-white rounded-xl text-xs px-3">
-                  Ask
-                </Button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
