@@ -13,6 +13,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { useEmployeeStore } from '../../store/employeeStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
@@ -23,6 +24,7 @@ import { Input } from '../../components/Input';
 import { cn } from '../../utils/cn';
 
 export const ManagerDashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const { employees, fetchEmployees } = useEmployeeStore();
   const { attendanceRecords } = useAttendanceStore();
@@ -648,24 +650,33 @@ export const ManagerDashboard = () => {
             <CardHeader>
               <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <FileText size={18} className="text-indigo-600 dark:text-indigo-400" />
-                Company Policies & Standard Guidelines
+                Company Policy & Employee Handbook
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {[
-                { name: 'Manager Workforce Hiring Guidelines 2026', code: 'POL-HR-04' },
-                { name: 'Overtime & Field Geofence Compensation Policy', code: 'POL-OPS-12' },
-                { name: 'Appraisal & Staff Promotion Procedures', code: 'POL-HR-08' },
-                { name: 'Code of Conduct & Workplace Ethics', code: 'POL-GEN-01' },
-              ].map((pol, idx) => (
-                <div key={idx} className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
-                  <div>
-                    <h5 className="font-bold text-xs text-slate-900 dark:text-white">{pol.name}</h5>
-                    <p className="text-[10px] text-slate-400">{pol.code}</p>
-                  </div>
-                  <Eye size={15} className="text-slate-400" />
+            <CardContent className="space-y-3">
+              <div 
+                onClick={() => navigate('/policies')}
+                className="p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40 transition-all cursor-pointer space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                    PH/HR/CIR-2026/01
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Active Circular
+                  </span>
                 </div>
-              ))}
+                <h5 className="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
+                  Unified Employee Handbook, Attendance & Leave Policy Circular
+                </h5>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Official corporate policy letter issued on company letterhead covering shift timings, digital attendance, paid leaves, payroll cycles, POSH compliance, and grievance protocols.
+                </p>
+                <div className="pt-1 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  <span>Open Official Policy Letter →</span>
+                  <Eye size={14} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
