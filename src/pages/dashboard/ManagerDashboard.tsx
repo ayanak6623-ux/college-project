@@ -17,7 +17,6 @@ import { useAuthStore } from '../../store';
 import { useEmployeeStore } from '../../store/employeeStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
-import { useManagerRequestStore, type ManagerRequest } from '../../store/managerRequestStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -28,11 +27,9 @@ export const ManagerDashboard = () => {
   const { employees, fetchEmployees } = useEmployeeStore();
   const { attendanceRecords } = useAttendanceStore();
   const { leaveRequests } = useLeaveStore();
-  const { requests, addRequest, deleteRequest } = useManagerRequestStore();
 
-  const [activeTab, setActiveTab] = useState<'home' | 'hr-requests' | 'attendance' | 'tasks' | 'me'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'attendance' | 'tasks' | 'me'>('home');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [copilotQuery, setCopilotQuery] = useState('');
   const [copilotResponses, setCopilotResponses] = useState<{ query: string; answer: string }[]>([
@@ -41,24 +38,6 @@ export const ManagerDashboard = () => {
       answer: 'Today 92% of your team is present on time. 1 team member is currently on approved annual leave.'
     }
   ]);
-
-  // Request form state
-  const [requestType, setRequestType] = useState<ManagerRequest['type']>('add_employee');
-  const [requestTitle, setRequestTitle] = useState('');
-  const [priority, setPriority] = useState<ManagerRequest['priority']>('High');
-  const [justification, setJustification] = useState('');
-  
-  // Specific employee details when requesting new hire
-  const [candidateName, setCandidateName] = useState('');
-  const [candidateDept, setCandidateDept] = useState('Operations');
-  const [candidateRole, setCandidateRole] = useState('');
-  const [candidateSalary, setCandidateSalary] = useState('');
-  const [candidateEmail, setCandidateEmail] = useState('');
-  const [candidatePhone, setCandidatePhone] = useState('');
-  const [employmentType, setEmploymentType] = useState('Full-time');
-
-  // Filter state for requests list
-  const [requestFilter, setRequestFilter] = useState<'all' | 'Pending' | 'Approved' | 'Rejected'>('all');
 
   // Tasks state
   const [tasks, setTasks] = useState([
@@ -128,81 +107,6 @@ export const ManagerDashboard = () => {
     ];
   }, []);
 
-  // Filtered requests
-  const filteredRequests = useMemo(() => {
-    if (requestFilter === 'all') return requests;
-    return requests.filter(r => r.status === requestFilter);
-  }, [requests, requestFilter]);
-
-  const pendingRequestsCount = useMemo(() => {
-    return requests.filter(r => r.status === 'Pending').length;
-  }, [requests]);
-
-  // Handle submit request for HR Admin
-  const handleSubmitRequest = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!requestTitle.trim()) {
-      toast.error('Please enter a request title');
-      return;
-    }
-
-    if (requestType === 'add_employee' && !candidateName.trim()) {
-      toast.error('Please enter candidate name for staff addition');
-      return;
-    }
-
-    let categoryLabel = 'General Request';
-    let employeeData = undefined;
-
-    if (requestType === 'add_employee') {
-      categoryLabel = 'New Staff Addition';
-      employeeData = {
-        candidateName: candidateName.trim(),
-        department: candidateDept,
-        designation: candidateRole.trim() || 'Software Engineer',
-        expectedSalary: Number(candidateSalary) || 50000,
-        employmentType: employmentType,
-        email: candidateEmail.trim() || `${candidateName.toLowerCase().replace(/\s+/g, '.')}@company.com`,
-        phone: candidatePhone.trim() || '+91 98765 00000',
-        joiningDate: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
-      };
-    } else if (requestType === 'leave_approval') {
-      categoryLabel = 'Leave / Shift Override';
-    } else if (requestType === 'promotion') {
-      categoryLabel = 'Promotion & Appraisal';
-    } else if (requestType === 'resource') {
-      categoryLabel = 'Equipment / Resource';
-    }
-
-    addRequest({
-      type: requestType,
-      title: requestTitle.trim(),
-      categoryLabel,
-      managerName: user?.name || 'Michael Chen',
-      managerEmail: user?.email || 'manager@company.com',
-      targetRole: 'HR Admin',
-      priority,
-      notes: justification.trim() || 'No specific notes provided.',
-      employeeDetails: employeeData,
-    });
-
-    toast.success('Requisition sent successfully to HR Admin Dashboard!', {
-      icon: '🚀',
-      duration: 4000,
-    });
-
-    // Reset form & close modal
-    setRequestTitle('');
-    setCandidateName('');
-    setCandidateRole('');
-    setCandidateSalary('');
-    setCandidateEmail('');
-    setCandidatePhone('');
-    setJustification('');
-    setIsModalOpen(false);
-  };
-
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
@@ -228,14 +132,14 @@ export const ManagerDashboard = () => {
     e.preventDefault();
     if (!copilotQuery.trim()) return;
     
-    let answer = 'Analyzing team metrics: All operations are running within optimal SLA parameters.';
+    let answer = 'Analyzing team metrics: All operations are running within optimal parameters.';
     const q = copilotQuery.toLowerCase();
     if (q.includes('attendance') || q.includes('present')) {
       answer = `Today, ${todayAttendance.present} out of ${todayAttendance.total} team members have checked in with verified biometric stamps.`;
     } else if (q.includes('leave') || q.includes('absent')) {
       answer = `Currently ${todayAttendance.onLeave} team member has an approved leave. Next upcoming holiday is in 12 days.`;
-    } else if (q.includes('hire') || q.includes('staff') || q.includes('employee')) {
-      answer = `You have ${pendingRequestsCount} active staffing requisition(s) awaiting approval from HR Admin Sarah Jenkins.`;
+    } else if (q.includes('staff') || q.includes('employee') || q.includes('team')) {
+      answer = `You have ${teamMembers.length} active team members reporting directly to your department.`;
     }
 
     setCopilotResponses([{ query: copilotQuery, answer }, ...copilotResponses]);
@@ -258,7 +162,7 @@ export const ManagerDashboard = () => {
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Sync with HR Admin
+                Live Manager Supervision
               </span>
             </div>
             
@@ -266,7 +170,7 @@ export const ManagerDashboard = () => {
               {greeting.text}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-white to-purple-200">{user?.name || 'Michael Chen'}</span> {greeting.icon}
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-              Team Operations & Staff Requisitions Hub. Submit new hiring requests directly to HR Admin, manage today's attendance, and supervise team performance.
+              Team Operations & Daily Supervision Hub. Manage team attendance, monitor daily check-ins, leaves, tasks, and supervise team performance.
             </p>
           </div>
 
@@ -279,14 +183,6 @@ export const ManagerDashboard = () => {
               <div className="text-lg font-bold font-mono text-white tracking-wide">{formattedTime}</div>
               <div className="text-[11px] text-indigo-200/80">{formattedDate}</div>
             </div>
-
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold px-4 py-3 rounded-2xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
-            >
-              <UserPlus size={18} />
-              <span>+ Request Staff to HR</span>
-            </Button>
           </div>
         </div>
       </div>
@@ -341,32 +237,27 @@ export const ManagerDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Card 4: HR Requisitions (Pending) */}
+        {/* Card 4: Team Punctuality */}
         <Card 
-          onClick={() => setActiveTab('hr-requests')}
+          onClick={() => setActiveTab('attendance')}
           className="rounded-2xl border-indigo-200/80 dark:border-indigo-800/80 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/20 cursor-pointer hover:shadow-md transition-all group"
         >
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">HR Requisitions</p>
-                {pendingRequestsCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                )}
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">{pendingRequestsCount} Pending</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">Team Punctuality</p>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white">96% On-Time</h3>
               <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold group-hover:underline flex items-center gap-1">
-                View HR Admin status <ChevronRight size={12} />
+                View Attendance logs <ChevronRight size={12} />
               </p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
-              <Send size={20} />
+              <Clock size={20} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 3. Navigation Tabs matching Manager Workspace Reference */}
+      {/* 3. Navigation Tabs */}
       <div className="border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
         <div className="flex items-center gap-2 min-w-max pb-1">
           <button
@@ -379,24 +270,6 @@ export const ManagerDashboard = () => {
             )}
           >
             <span>Home (Overview)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('hr-requests')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative",
-              activeTab === 'hr-requests'
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-            )}
-          >
-            <Send size={15} />
-            <span>HR Requisitions & Add Staff</span>
-            {pendingRequestsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">
-                {pendingRequestsCount}
-              </span>
-            )}
           </button>
 
           <button
@@ -535,53 +408,58 @@ export const ManagerDashboard = () => {
 
             {/* Right Column: Quick HR Requisitions & AI Copilot */}
             <div className="space-y-6">
-              {/* Quick Requisitions Panel */}
-              <Card className="rounded-2xl border-indigo-200 dark:border-indigo-900/60 shadow-sm">
+              {/* Quick Team Attendance & Leaves Snapshot */}
+              <Card className="rounded-2xl border-indigo-200/80 dark:border-indigo-900/60 shadow-sm bg-white dark:bg-slate-900">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
                   <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Send size={16} className="text-indigo-600 dark:text-indigo-400" />
-                    Recent HR Requisitions
+                    <UserCheck size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    Today's Attendance Status
                   </CardTitle>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => setActiveTab('hr-requests')}
+                    onClick={() => setActiveTab('attendance')}
                     className="text-xs text-indigo-600 font-bold"
                   >
-                    View All
+                    View Radar
                   </Button>
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
-                  {requests.slice(0, 3).map((req) => (
-                    <div key={req.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-                          {req.categoryLabel}
-                        </span>
-                        <span className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                          req.status === 'Approved' ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300" :
-                          req.status === 'Rejected' ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300" :
-                          "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
-                        )}>
-                          {req.status === 'Pending' ? 'Pending HR Review' : req.status}
-                        </span>
-                      </div>
-                      <h5 className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">{req.title}</h5>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">{req.notes}</p>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">On-Duty Present:</span>
+                      <span className="font-bold text-emerald-600">{todayAttendance.present} / {todayAttendance.total}</span>
                     </div>
-                  ))}
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-full rounded-full transition-all"
+                        style={{ width: `${todayAttendance.total > 0 ? (todayAttendance.present / todayAttendance.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                      <span className="text-slate-500 font-medium">Approved Leave:</span>
+                      <span className="font-bold text-amber-600">{todayAttendance.onLeave} Members</span>
+                    </div>
+                  </div>
 
-                  <Button 
-                    onClick={() => setIsModalOpen(true)}
-                    className="w-full mt-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/60 font-bold text-xs py-2.5 rounded-xl border border-indigo-200/60 dark:border-indigo-800/40"
-                  >
-                    + Submit New Request to HR Admin
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <Button 
+                      onClick={() => setActiveTab('attendance')}
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold text-xs py-2 rounded-xl border border-indigo-200/60"
+                    >
+                      Team Radar
+                    </Button>
+                    <Button 
+                      onClick={() => setActiveTab('tasks')}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 font-bold text-xs py-2 rounded-xl border border-slate-200 dark:border-slate-700"
+                    >
+                      Team Agenda
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* AI Copilot Card matching reference */}
+              {/* AI Copilot Card */}
               <div className="rounded-2xl p-5 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 text-white border border-indigo-800/40 shadow-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 uppercase tracking-wider">
@@ -592,7 +470,7 @@ export const ManagerDashboard = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-white">Ask about workforce</h4>
-                  <p className="text-xs text-slate-300 mt-0.5">Instant intelligence on team leaves, productivity, shift hours & staff requisitions.</p>
+                  <p className="text-xs text-slate-300 mt-0.5">Instant intelligence on team leaves, productivity, shift hours & attendance.</p>
                 </div>
                 <Button
                   onClick={() => setIsCopilotOpen(true)}
@@ -603,160 +481,6 @@ export const ManagerDashboard = () => {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Tab 2: HR Requisitions & Add Staff (CORE USER FEATURE) */}
-      {activeTab === 'hr-requests' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  HR Requisitions & Staff Addition Gateway
-                </h2>
-                <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-                  Target: HR Admin
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Every request submitted here appears directly on the **HR Admin Dashboard** with live sync. HR Admin can approve, reject, or directly onboard requested staff into MongoDB.
-              </p>
-            </div>
-
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shrink-0 shadow-md shadow-indigo-600/20"
-            >
-              <Plus size={16} />
-              <span>+ New Requisition</span>
-            </Button>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              {(['all', 'Pending', 'Approved', 'Rejected'] as const).map(filterKey => (
-                <button
-                  key={filterKey}
-                  onClick={() => setRequestFilter(filterKey)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
-                    requestFilter === filterKey
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-950 border-slate-900 dark:border-white shadow-sm"
-                      : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                  )}
-                >
-                  {filterKey === 'all' ? 'All Requests' : filterKey}
-                </button>
-              ))}
-            </div>
-
-            <span className="text-xs text-slate-500 font-semibold">
-              Showing {filteredRequests.length} requisitions
-            </span>
-          </div>
-
-          {/* Requests Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredRequests.map((req) => (
-              <Card key={req.id} className="rounded-2xl border-slate-200/80 dark:border-slate-800 hover:shadow-md transition-shadow">
-                <CardContent className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">
-                          {req.categoryLabel}
-                        </span>
-                        <span className={cn(
-                          "text-[10px] font-bold px-2 py-0.5 rounded-md",
-                          req.priority === 'Urgent' ? "bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300" :
-                          req.priority === 'High' ? "bg-amber-100 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300" :
-                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        )}>
-                          {req.priority} Priority
-                        </span>
-                      </div>
-                      <h4 className="font-extrabold text-base text-slate-900 dark:text-white">{req.title}</h4>
-                      <p className="text-xs text-slate-400 font-mono">ID: {req.id} · Submitted {new Date(req.createdAt).toLocaleDateString()}</p>
-                    </div>
-
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-black shrink-0 border",
-                      req.status === 'Approved' ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300" :
-                      req.status === 'Rejected' ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300" :
-                      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse"
-                    )}>
-                      {req.status === 'Pending' ? 'Pending HR Review' : req.status}
-                    </span>
-                  </div>
-
-                  {/* Candidate details preview if staff addition */}
-                  {req.employeeDetails && (
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                          <UserPlus size={14} className="text-indigo-600 dark:text-indigo-400" />
-                          Proposed Staff Member:
-                        </span>
-                        <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
-                          ₹{Number(req.employeeDetails.expectedSalary).toLocaleString()} /mo
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-slate-400 text-[11px]">Candidate:</span>{' '}
-                          <span className="font-bold text-slate-800 dark:text-slate-200">{req.employeeDetails.candidateName}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-[11px]">Role:</span>{' '}
-                          <span className="font-bold text-slate-800 dark:text-slate-200">{req.employeeDetails.designation}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-[11px]">Department:</span>{' '}
-                          <span className="font-bold text-slate-800 dark:text-slate-200">{req.employeeDetails.department}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-[11px]">Type:</span>{' '}
-                          <span className="font-bold text-slate-800 dark:text-slate-200">{req.employeeDetails.employmentType}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Justification Notes */}
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800">
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Manager Justification:</span> {req.notes}
-                  </p>
-
-                  {/* HR Feedback / Remarks if reviewed */}
-                  {req.hrRemarks && (
-                    <div className="text-xs p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-900 dark:text-indigo-200">
-                      <span className="font-bold">HR Admin Response:</span> {req.hrRemarks}
-                      {req.reviewedBy && (
-                        <span className="block text-[10px] text-indigo-500 dark:text-indigo-400 mt-1 font-mono">
-                          Reviewed by {req.reviewedBy} on {new Date(req.reviewedAt || '').toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800 text-slate-400">
-                    <span>Target: HR Admin (Sarah Jenkins)</span>
-                    <button
-                      onClick={() => {
-                        deleteRequest(req.id);
-                        toast.success('Requisition retracted');
-                      }}
-                      className="text-rose-500 hover:underline font-semibold"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       )}
@@ -951,228 +675,7 @@ export const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* 9. Interactive Modal: Submit Requisition to HR Admin */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 max-h-[90vh] flex flex-col"
-            >
-              <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
-                      <UserPlus size={16} />
-                    </span>
-                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">
-                      Submit Requisition to HR Admin
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Live delivery to HR Administration portal
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmitRequest} className="p-6 overflow-y-auto space-y-4">
-                {/* Fixed Target Indicator */}
-                <div className="p-3 rounded-xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Target Recipient:</span>
-                  <span className="font-extrabold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-                    <CheckCircle2 size={14} /> HR Admin (Sarah Jenkins / Ayaan Khan)
-                  </span>
-                </div>
-
-                {/* Requisition Type */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Requisition Category
-                  </label>
-                  <select
-                    value={requestType}
-                    onChange={(e) => setRequestType(e.target.value as any)}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="add_employee">Add New Staff / Hiring Requisition</option>
-                    <option value="promotion">Employee Promotion / Appraisal Request</option>
-                    <option value="leave_approval">Leave / Shift Override Approval</option>
-                    <option value="resource">Equipment / Asset Requisition</option>
-                    <option value="general">General HR Management Request</option>
-                  </select>
-                </div>
-
-                {/* Title */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Request Title *
-                  </label>
-                  <Input
-                    value={requestTitle}
-                    onChange={(e) => setRequestTitle(e.target.value)}
-                    placeholder="e.g. Request to onboard 1 Junior QA Engineer"
-                    required
-                    className="rounded-xl text-xs"
-                  />
-                </div>
-
-                {/* Candidate fields if adding employee */}
-                {requestType === 'add_employee' && (
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
-                      <UserPlus size={14} /> Candidate & Staff Details (To Add to HR)
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Candidate Full Name *</label>
-                        <Input
-                          value={candidateName}
-                          onChange={(e) => setCandidateName(e.target.value)}
-                          placeholder="e.g. Rohan Mehra"
-                          required
-                          className="rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Proposed Designation *</label>
-                        <Input
-                          value={candidateRole}
-                          onChange={(e) => setCandidateRole(e.target.value)}
-                          placeholder="e.g. React Developer"
-                          required
-                          className="rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Department</label>
-                        <select
-                          value={candidateDept}
-                          onChange={(e) => setCandidateDept(e.target.value)}
-                          className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold"
-                        >
-                          <option value="Operations">Operations</option>
-                          <option value="Sales">Sales</option>
-                          <option value="Engineering">Engineering</option>
-                          <option value="Marketing">Marketing</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Expected Monthly Salary (₹)</label>
-                        <Input
-                          type="number"
-                          value={candidateSalary}
-                          onChange={(e) => setCandidateSalary(e.target.value)}
-                          placeholder="e.g. 55000"
-                          className="rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Email Address</label>
-                        <Input
-                          type="email"
-                          value={candidateEmail}
-                          onChange={(e) => setCandidateEmail(e.target.value)}
-                          placeholder="rohan@example.com"
-                          className="rounded-xl text-xs"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Phone Number</label>
-                        <Input
-                          value={candidatePhone}
-                          onChange={(e) => setCandidatePhone(e.target.value)}
-                          placeholder="+91 98765 43210"
-                          className="rounded-xl text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Priority Selection */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Priority Level</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {(['Low', 'Normal', 'High', 'Urgent'] as const).map(p => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPriority(p)}
-                        className={cn(
-                          "py-2 rounded-xl text-xs font-bold border transition-all",
-                          priority === p
-                            ? p === 'Urgent' ? "bg-rose-600 text-white border-rose-600" :
-                              p === 'High' ? "bg-amber-500 text-white border-amber-500" :
-                              "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                        )}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Justification Textarea */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Business Justification / Notes for HR Admin *
-                  </label>
-                  <textarea
-                    value={justification}
-                    onChange={(e) => setJustification(e.target.value)}
-                    rows={3}
-                    placeholder="Provide context on why this candidate or request is needed for operations..."
-                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsModalOpen(false)}
-                    className="rounded-xl text-xs"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs px-5 shadow-lg shadow-indigo-600/20"
-                  >
-                    🚀 Send Requisition to HR Admin
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 10. AI Copilot Drawer */}
+      {/* AI Copilot Drawer */}
       <AnimatePresence>
         {isCopilotOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-end">
