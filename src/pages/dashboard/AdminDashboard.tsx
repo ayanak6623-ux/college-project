@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, UserCheck, UserX, Clock, 
-  MoreHorizontal, Check, X, Calendar 
+  MoreHorizontal, Check, X, Calendar, Send, UserPlus
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -20,6 +21,7 @@ import {
 import { useEmployeeStore } from '../../store/employeeStore';
 import { useAttendanceStore } from '../../store/attendanceStore';
 import { useLeaveStore } from '../../store/leaveStore';
+import { useManagerRequestStore } from '../../store/managerRequestStore';
 
 // Simple count up component
 const CountUp = ({ end }: { end: number }) => {
@@ -48,9 +50,48 @@ const CountUp = ({ end }: { end: number }) => {
 
 export const AdminDashboard = () => {
   const { user } = useAuthStore();
-  const { employees, fetchEmployees, getEmployee } = useEmployeeStore();
+  const { employees, fetchEmployees, getEmployee, addEmployee } = useEmployeeStore();
   const { attendanceRecords } = useAttendanceStore();
   const { leaveRequests, leaveTypes, updateLeaveRequestStatus } = useLeaveStore();
+  const { requests: managerRequests, updateStatus: updateManagerRequestStatus } = useManagerRequestStore();
+
+  const handleApproveAndOnboard = async (req: any) => {
+    try {
+      if (req.employeeDetails) {
+        const nextNum = employees.length + 1;
+        const empId = `EMP-0${nextNum < 10 ? '0' + nextNum : nextNum}`;
+        const names = req.employeeDetails.candidateName.split(' ');
+        await addEmployee({
+          empId,
+          firstName: names[0] || 'Staff',
+          lastName: names.slice(1).join(' ') || 'Member',
+          email: req.employeeDetails.email || `${req.employeeDetails.candidateName.toLowerCase().replace(/\s+/g, '.')}@company.com`,
+          loginEmail: req.employeeDetails.email || `${req.employeeDetails.candidateName.toLowerCase().replace(/\s+/g, '.')}@company.com`,
+          password: 'Admin@123',
+          department: req.employeeDetails.department || 'Operations',
+          designation: req.employeeDetails.designation || 'Specialist',
+          employmentType: req.employeeDetails.employmentType || 'Full-time',
+          reportingManager: req.managerName || 'Michael Chen',
+          salary: Number(req.employeeDetails.expectedSalary) || 50000,
+          shiftId: 'shift-1',
+          role: 'Employee',
+          status: 'Active',
+          gender: 'Male',
+          dob: '1998-01-01',
+          address: 'Bhopal, MP',
+          phone: req.employeeDetails.phone || '+91 98765 00000',
+          joiningDate: new Date().toISOString().split('T')[0],
+        });
+        updateManagerRequestStatus(req.id, 'Approved', `Approved & Onboarded to staff by HR Admin ${user?.name || 'Sarah Jenkins'}`, user?.name || 'HR Admin');
+        toast.success(`Candidate ${req.employeeDetails.candidateName} approved and added to Employees!`, { icon: '🎉' });
+      } else {
+        updateManagerRequestStatus(req.id, 'Approved', `Approved by HR Admin ${user?.name || 'Sarah Jenkins'}`, user?.name || 'HR Admin');
+        toast.success('Manager requisition approved successfully!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to onboard candidate');
+    }
+  };
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -281,6 +322,103 @@ export const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Manager Requisitions & Staff Addition Gateway (Connected Live to Manager Dashboard) */}
+      <Card className="rounded-2xl border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/40 via-white to-purple-50/20 dark:from-indigo-950/20 dark:via-slate-900 dark:to-purple-950/20 shadow-sm overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                <Send size={16} />
+              </span>
+              <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Manager Staffing Requisitions & Requests
+              </CardTitle>
+              {managerRequests.filter(r => r.status === 'Pending').length > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-400 text-slate-950 animate-pulse">
+                  {managerRequests.filter(r => r.status === 'Pending').length} Pending Review
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Live requests submitted by Operations & Department Managers for HR Admin sign-off and hiring.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {managerRequests.slice(0, 3).map((req) => (
+              <div key={req.id} className="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                      {req.categoryLabel}
+                    </span>
+                    <span className="text-xs font-extrabold text-slate-900 dark:text-white">
+                      {req.title}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      by <strong className="text-slate-600 dark:text-slate-300">{req.managerName}</strong> · {new Date(req.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {req.employeeDetails ? (
+                    <div className="text-xs text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                      <span><strong>Candidate:</strong> {req.employeeDetails.candidateName}</span>
+                      <span><strong>Proposed Role:</strong> {req.employeeDetails.designation} ({req.employeeDetails.department})</span>
+                      <span><strong>Salary:</strong> ₹{Number(req.employeeDetails.expectedSalary).toLocaleString()}</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 line-clamp-1">{req.notes}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {req.status === 'Pending' ? (
+                    <>
+                      {req.type === 'add_employee' && (
+                        <button
+                          onClick={() => handleApproveAndOnboard(req)}
+                          className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <UserPlus size={14} />
+                          Approve & Onboard
+                        </button>
+                      )}
+                      {req.type !== 'add_employee' && (
+                        <button
+                          onClick={() => handleApproveAndOnboard(req)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                        >
+                          <Check size={14} />
+                          Approve
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          updateManagerRequestStatus(req.id, 'Rejected', 'Declined by HR Administration', user?.name || 'HR Admin');
+                          toast.error('Requisition rejected');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-bold text-xs border border-rose-200/60 dark:border-rose-800/40"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold border",
+                      req.status === 'Approved' ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300" :
+                      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300"
+                    )}>
+                      {req.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

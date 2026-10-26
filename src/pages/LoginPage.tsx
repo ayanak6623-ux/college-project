@@ -82,8 +82,8 @@ export const LoginPage = () => {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: ROLE_ACCOUNTS[0].email,
-      password: ROLE_ACCOUNTS[0].password,
+      email: '',
+      password: '',
       rememberMe: true,
     }
   });
@@ -94,15 +94,7 @@ export const LoginPage = () => {
 
     const inputVal = data.email.trim().toLowerCase();
 
-    // Check against role accounts
-    const defaultAcc = ROLE_ACCOUNTS.find(
-      acc => acc.email.toLowerCase() === inputVal || 
-             acc.id.toLowerCase() === inputVal ||
-             (acc.id === 'employee' && (inputVal === 'presales@company.com' || inputVal === 'employee@company.com' || inputVal === 'sales@company.com' || inputVal === 'hybrid@company.com'))
-    );
-    const isDefaultAuth = data.password === 'Admin@123' && Boolean(defaultAcc);
-    
-    // Check against employee records in MongoDB
+    // 1. Check against live real employee records in MongoDB
     const employeeMatch = employees.find(
       (emp) =>
         ((emp.loginEmail && emp.loginEmail.toLowerCase() === inputVal) ||
@@ -111,12 +103,17 @@ export const LoginPage = () => {
         emp.password === data.password
     );
 
-    if (isDefaultAuth || employeeMatch) {
-      let loginName = 'HR Admin';
-      let loginRole = 'admin';
+    // 2. Fallback check for demo role accounts
+    const defaultAcc = ROLE_ACCOUNTS.find(
+      acc => (acc.email.toLowerCase() === inputVal || acc.id.toLowerCase() === inputVal) && data.password === acc.password
+    );
+
+    if (employeeMatch || defaultAcc) {
+      let loginName = '';
+      let loginRole = '';
       
       if (employeeMatch) {
-        loginName = `${employeeMatch.firstName} ${employeeMatch.lastName}`;
+        loginName = `${employeeMatch.firstName} ${employeeMatch.lastName}`.trim();
         loginRole = employeeMatch.role;
       } else if (defaultAcc) {
         loginName = defaultAcc.label;
@@ -124,10 +121,10 @@ export const LoginPage = () => {
       }
       
       login(data.email, loginName, loginRole);
-      toast.success(`Welcome back, ${loginName}!`, { icon: '👋' });
+      toast.success(`Welcome back, ${loginName}! (${loginRole} Portal)`, { icon: '👋' });
       navigate('/dashboard');
     } else {
-      toast.error('Invalid credentials. Please enter valid Email or Employee ID.', {
+      toast.error('Invalid credentials. Please enter your valid registered Email / Employee ID and password.', {
         icon: <AlertCircle className="text-rose-500" />,
       });
       setIsLoading(false);
@@ -234,7 +231,7 @@ export const LoginPage = () => {
                             setSelectedAccount(account);
                             setIsDropdownOpen(false);
                             setValue('email', account.email, { shouldValidate: true });
-                            setValue('password', account.password, { shouldValidate: true });
+                            setValue('password', '');
                           }}
                           className={cn(
                             "w-full flex items-center justify-between px-3 py-2.5 text-xs sm:text-sm rounded-xl transition-all group text-left",

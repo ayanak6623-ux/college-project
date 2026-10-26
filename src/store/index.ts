@@ -41,4 +41,5 @@ export const useThemeStore = create<ThemeState>()(
 );
 
 export * from './notificationStore';
+export * from './managerRequestStore';
 
