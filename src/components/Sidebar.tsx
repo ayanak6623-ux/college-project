@@ -12,23 +12,15 @@ import {
   Receipt,
   FileText,
   Megaphone,
-  MapPin,
-  Send,
-  Sparkles,
-  ChevronsLeft,
-  ChevronLeft,
-  ChevronRight,
   LogOut,
   LayoutDashboard,
   Users,
   Settings2,
   CalendarDays,
   Tags,
-  Settings,
-  UserPlus
+  Settings
 } from 'lucide-react';
 import { useAuthStore } from '../store';
-import { useManagerRequestStore } from '../store/managerRequestStore';
 import { cn } from '../utils/cn';
 
 // HR Admin menu items
@@ -38,7 +30,12 @@ const adminMenuItems = [
   { path: '/attendance', label: 'Attendance', icon: CalendarClock },
   { path: '/attendance-config', label: 'Attendance Config', icon: Settings2 },
   { path: '/leaves', label: 'Leaves', icon: CalendarDays },
-  { path: '/leave-types', label: 'Leave Types', icon: Tags },
+  { path: '/tasks', label: 'Tasks', icon: ClipboardList },
+  { path: '/meetings', label: 'Meetings', icon: CalendarClock },
+  { path: '/policies', label: 'Policies', icon: FileText },
+  { path: '/rewards', label: 'Rewards', icon: Gift },
+  { path: '/payslips', label: 'Payslips', icon: Receipt },
+  { path: '/announcements', label: 'Announcements', icon: Megaphone },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -47,14 +44,18 @@ const employeeMenuItems = [
   { path: '/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
   { path: '/attendance', label: 'My Attendance', icon: CalendarClock },
   { path: '/leaves', label: 'My Leaves', icon: CalendarDays },
+  { path: '/tasks', label: 'My Tasks', icon: ClipboardList },
+  { path: '/meetings', label: 'Meetings', icon: CalendarClock },
+  { path: '/policies', label: 'Company Policies', icon: FileText },
+  { path: '/rewards', label: 'Rewards', icon: Gift },
+  { path: '/payslips', label: 'My Payslips', icon: Receipt },
+  { path: '/announcements', label: 'Announcements', icon: Megaphone },
 ];
 
 export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setIsOpen: (v: boolean) => void, isMobile: boolean }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getPendingCount } = useManagerRequestStore();
-  const pendingRequestsCount = getPendingCount();
 
   const handleLogout = () => {
     logout();
@@ -63,13 +64,35 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
 
   const isManager = user?.role === 'Manager';
 
-  // --- Manager Workspace Sidebar Content (Matches Reference Image) ---
+  // Smart slide toggle: clicking anywhere on the header or clicking when collapsed toggles the sidebar
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
+
+  const handleSidebarClick = () => {
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+  };
+
+  // --- Manager Workspace Sidebar Content (Matches Reference Image with Last 3 Removed) ---
   const renderManagerSidebar = () => (
-    <div className="flex h-full flex-col bg-[#0b0f19] text-slate-200 border-r border-slate-800/80 shadow-2xl relative select-none">
-      {/* Brand Header */}
-      <div className="flex h-16 items-center justify-between px-4 py-4 border-b border-slate-800/80">
+    <div 
+      onClick={handleSidebarClick}
+      className={cn(
+        "flex h-full flex-col bg-[#0b0f19] text-slate-200 border-r border-slate-800/80 shadow-2xl relative select-none transition-all",
+        !isOpen && "cursor-pointer hover:bg-slate-900/90"
+      )}
+    >
+      {/* Brand Header: Click to slide / toggle on/off */}
+      <div 
+        onClick={handleHeaderClick}
+        className="flex h-16 items-center justify-between px-4 py-4 border-b border-slate-800/80 cursor-pointer hover:bg-slate-800/40 transition-colors group"
+        title={isOpen ? "Click to collapse sidebar" : "Click to expand sidebar"}
+      >
         <div className="flex items-center gap-2.5 truncate">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold shrink-0 group-hover:scale-105 transition-transform">
             <Crown size={18} className="text-indigo-400" />
           </div>
           <AnimatePresence>
@@ -91,13 +114,11 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
           </AnimatePresence>
         </div>
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-7 h-7 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors shrink-0"
-          title={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
-        >
-          {isOpen ? <ChevronsLeft size={15} /> : <ChevronRight size={15} />}
-        </button>
+        {isOpen && (
+          <span className="text-[10px] text-slate-500 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+            click to slide
+          </span>
+        )}
       </div>
 
       {/* Nav List with Sections */}
@@ -138,16 +159,26 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
+            to="/tasks"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-slate-800/90 text-white font-bold border border-slate-700/60 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+            )}
           >
             <ClipboardList size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
             {isOpen && <span>My tasks</span>}
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
+            to="/meetings"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-slate-800/90 text-white font-bold border border-slate-700/60 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+            )}
           >
             <CalendarClock size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
             {isOpen && <span>Meetings</span>}
@@ -176,89 +207,57 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
+            to="/rewards"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-slate-800/90 text-white font-bold border border-slate-700/60 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+            )}
           >
             <Gift size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
             {isOpen && <span>Rewards</span>}
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
+            to="/payslips"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-slate-800/90 text-white font-bold border border-slate-700/60 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+            )}
           >
             <Receipt size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
             {isOpen && <span>Payslips</span>}
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
+            to="/policies"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-slate-800/90 text-white font-bold border border-slate-700/60 shadow-sm"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+            )}
           >
             <FileText size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
             {isOpen && <span>Company Policies</span>}
           </NavLink>
 
           <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-indigo-400 bg-indigo-950/40 border border-indigo-900/50 hover:bg-indigo-950/70 transition-all group font-bold"
+            to="/announcements"
+            className={({ isActive }) => cn(
+              "flex items-center rounded-xl px-3 py-2 transition-all group font-medium",
+              isActive
+                ? "bg-indigo-950/70 text-indigo-300 font-bold border border-indigo-800/60 shadow-sm"
+                : "text-slate-400 hover:text-indigo-300 hover:bg-indigo-950/30"
+            )}
           >
-            <Megaphone size={17} className={cn("shrink-0 text-indigo-400", isOpen && "mr-3")} />
+            <Megaphone size={17} className={cn("shrink-0", isOpen && "mr-3")} />
             {isOpen && <span>Announcements & Polls</span>}
           </NavLink>
         </div>
-
-        {/* SECTION 3: MY TEAM */}
-        <div className="space-y-1">
-          {isOpen && (
-            <p className="px-3 text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">
-              MY TEAM
-            </p>
-          )}
-
-          <NavLink
-            to="/dashboard"
-            className="flex items-center rounded-xl px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-all group font-medium"
-          >
-            <MapPin size={17} className={cn("shrink-0", isOpen && "mr-3 text-slate-400 group-hover:text-white")} />
-            {isOpen && <span>Team Geo-fence</span>}
-          </NavLink>
-
-          <NavLink
-            to="/dashboard"
-            className="flex items-center justify-between rounded-xl px-3 py-2 text-indigo-300 hover:text-white bg-indigo-950/30 hover:bg-indigo-950/60 border border-indigo-800/40 transition-all group font-bold"
-          >
-            <div className="flex items-center truncate">
-              <UserPlus size={17} className={cn("shrink-0 text-indigo-400", isOpen && "mr-3")} />
-              {isOpen && <span className="truncate">HR Requests & Add Staff</span>}
-            </div>
-            {isOpen && pendingRequestsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black">
-                {pendingRequestsCount}
-              </span>
-            )}
-          </NavLink>
-        </div>
-
-        {/* AI Copilot Widget */}
-        {isOpen && (
-          <div className="mt-4 p-3.5 rounded-2xl bg-gradient-to-br from-indigo-950/70 via-slate-900 to-purple-950/60 border border-indigo-800/40 text-white space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/20 text-cyan-300 border border-indigo-400/30 uppercase tracking-wider">
-              <Sparkles size={10} className="text-cyan-400" />
-              AI COPILOT
-            </div>
-            <p className="text-[11px] text-slate-300 leading-tight">
-              Ask about workforce — leaves, productivity, attrition.
-            </p>
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold text-[11px] shadow-sm flex items-center justify-center gap-1.5 transition-all"
-            >
-              <Sparkles size={12} />
-              Open Crownco AI
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Logout Footer */}
@@ -274,16 +273,23 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
     </div>
   );
 
-  // --- HR Admin & Employee Sidebar Content ---
+  // --- HR Admin & Employee Default Sidebar Content ---
   const currentMenu = isManager ? [] : user?.role === 'Employee' ? employeeMenuItems : adminMenuItems;
 
   const renderDefaultSidebar = () => (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900 border-r border-border shadow-sm transition-all duration-300 relative">
+    <div 
+      onClick={handleSidebarClick}
+      className={cn(
+        "flex h-full flex-col bg-white dark:bg-slate-900 border-r border-border shadow-sm transition-all relative",
+        !isOpen && "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+      )}
+    >
       <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex h-16 items-center px-4 md:px-6 py-4 border-b border-border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+        onClick={handleHeaderClick}
+        className="flex h-16 items-center px-4 md:px-6 py-4 border-b border-border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+        title={isOpen ? "Click to collapse" : "Click to expand"}
       >
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center text-white font-bold text-xl mr-3 shrink-0">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-600 to-secondary-500 flex items-center justify-center text-white font-bold text-xl mr-3 shrink-0 group-hover:scale-105 transition-transform">
           P
         </div>
         <AnimatePresence>

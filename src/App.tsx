@@ -13,6 +13,12 @@ import { AttendanceConfigPage } from './pages/attendance/AttendanceConfigPage';
 import { LeavesPage } from './pages/leaves/LeavesPage';
 import { LeaveTypesPage } from './pages/leaves/LeaveTypesPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TasksPage } from './pages/tasks/TasksPage';
+import { MeetingsPage } from './pages/meetings/MeetingsPage';
+import { PoliciesPage } from './pages/policies/PoliciesPage';
+import { RewardsPage } from './pages/rewards/RewardsPage';
+import { PayslipsPage } from './pages/payslips/PayslipsPage';
+import { AnnouncementsPage } from './pages/announcements/AnnouncementsPage';
 import { AppLayout } from './layouts/AppLayout';
 import { CanvasCursor } from './components/CanvasCursor';
 
@@ -37,6 +43,14 @@ function App() {
             <Route path="/attendance-config" element={<AttendanceConfigPage />} />
             <Route path="/leaves" element={<LeavesPage />} />
             <Route path="/leave-types" element={<LeaveTypesPage />} />
+            
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/policies" element={<PoliciesPage />} />
+            <Route path="/rewards" element={<RewardsPage />} />
+            <Route path="/payslips" element={<PayslipsPage />} />
+            <Route path="/announcements" element={<AnnouncementsPage />} />
+
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           
