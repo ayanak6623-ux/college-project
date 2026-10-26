@@ -85,15 +85,15 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
         !isOpen && "cursor-pointer hover:bg-slate-900/90"
       )}
     >
-      {/* Brand Header: Click to slide / toggle on/off */}
+      {/* Brand Header: Toggle on click */}
       <div 
         onClick={handleHeaderClick}
-        className="flex h-16 items-center justify-between px-4 py-4 border-b border-slate-800/80 cursor-pointer hover:bg-slate-800/40 transition-colors group"
+        className="flex h-16 items-center px-4 py-4 border-b border-slate-800/80 cursor-pointer hover:bg-slate-800/40 transition-colors group"
         title={isOpen ? "Click to collapse sidebar" : "Click to expand sidebar"}
       >
         <div className="flex items-center gap-2.5 truncate">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold shrink-0 group-hover:scale-105 transition-transform">
-            <Crown size={18} className="text-indigo-400" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-base shrink-0 group-hover:scale-105 transition-transform shadow-md shadow-indigo-500/25">
+            P
           </div>
           <AnimatePresence>
             {isOpen && (
@@ -104,21 +104,15 @@ export const Sidebar = ({ isOpen, setIsOpen, isMobile }: { isOpen: boolean, setI
                 className="overflow-hidden"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-base tracking-tight text-white">crownco</span>
+                  <span className="font-extrabold text-base tracking-tight text-white">PeopleHub</span>
                 </div>
-                <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                  WORKSPACE · MANAGER
+                <p className="text-[10px] font-bold tracking-wider text-indigo-400 uppercase">
+                  Manager Portal
                 </p>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {isOpen && (
-          <span className="text-[10px] text-slate-500 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
-            click to slide
-          </span>
-        )}
       </div>
 
       {/* Nav List with Sections */}

@@ -158,7 +158,7 @@ export const ManagerDashboard = () => {
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 tracking-wide uppercase">
                 <Briefcase size={13} className="text-indigo-400" />
-                Workspace · Manager Portal
+                PeopleHub · Manager Portal
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -477,7 +477,7 @@ export const ManagerDashboard = () => {
                   className="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold text-xs py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2"
                 >
                   <Sparkles size={14} />
-                  Open Crownco AI
+                  Open PeopleHub AI
                 </Button>
               </div>
             </div>
@@ -697,7 +697,7 @@ export const ManagerDashboard = () => {
                 <div className="flex items-center gap-2">
                   <Sparkles size={18} className="text-cyan-400" />
                   <div>
-                    <h3 className="font-extrabold text-sm">Crownco AI Workforce Copilot</h3>
+                    <h3 className="font-extrabold text-sm">PeopleHub AI Workforce Copilot</h3>
                     <p className="text-[10px] text-indigo-300">Manager Decision Intelligence</p>
                   </div>
                 </div>
