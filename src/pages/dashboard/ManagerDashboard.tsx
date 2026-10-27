@@ -260,8 +260,8 @@ export const ManagerDashboard = () => {
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             )}
           >
-            <MapPin size={15} />
-            <span>Attendance & Team Geo-fence</span>
+            <Clock size={15} />
+            <span>Team Attendance</span>
           </button>
 
           <button
@@ -400,7 +400,7 @@ export const ManagerDashboard = () => {
                     onClick={() => setActiveTab('attendance')}
                     className="text-xs text-indigo-600 font-bold"
                   >
-                    View Radar
+                    View Attendance
                   </Button>
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
@@ -426,7 +426,7 @@ export const ManagerDashboard = () => {
                       onClick={() => setActiveTab('attendance')}
                       className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold text-xs py-2 rounded-xl border border-indigo-200/60"
                     >
-                      Team Radar
+                      Team Attendance
                     </Button>
                     <Button 
                       onClick={() => setActiveTab('tasks')}
@@ -483,49 +483,54 @@ export const ManagerDashboard = () => {
         </div>
       )}
 
-      {/* 6. Tab 3: Attendance & Team Geo-fence */}
+      {/* 6. Tab 3: Team Daily Attendance */}
       {activeTab === 'attendance' && (
         <div className="space-y-6">
           <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <MapPin size={18} className="text-indigo-600 dark:text-indigo-400" />
-                Team Geo-fence Live Radar & Check-in Verification
-              </CardTitle>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Supervise geofenced premises (Head Office 200m zone & Field Sales tracking)
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative h-48 w-full rounded-2xl bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 overflow-hidden border border-indigo-900/60 flex items-center justify-center text-white">
-                <div className="w-32 h-32 rounded-full border border-indigo-500/30 animate-ping absolute" />
-                <div className="w-48 h-48 rounded-full border border-indigo-500/20 absolute" />
-                <div className="relative z-10 text-center space-y-1">
-                  <div className="w-10 h-10 mx-auto rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold shadow-lg">
-                    <MapPin size={20} />
-                  </div>
-                  <h4 className="font-bold text-sm">Main Office Geo-fence (HQ-Bhopal)</h4>
-                  <p className="text-xs text-indigo-300">Radius: 250m · GPS Precision Verified · 7 Devices Active</p>
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Clock size={18} className="text-indigo-600 dark:text-indigo-400" />
+                  Team Daily Attendance & Duty Roster
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Daily check-in logs, duty shifts, and punctuality status for direct reports
+                </p>
               </div>
-
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60">
+                {teamMembers.length} Members Tracked
+              </span>
+            </CardHeader>
+            <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {teamMembers.map((member, idx) => (
-                  <div key={member.id || idx} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
+                  <div key={member.id || idx} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
-                        {member.firstName?.[0]}
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                        {member.firstName?.[0] || 'E'}
                       </div>
                       <div>
-                        <h5 className="font-bold text-xs text-slate-900 dark:text-white">{member.firstName} {member.lastName}</h5>
-                        <p className="text-[11px] text-slate-400 flex items-center gap-1">
-                          <MapPin size={10} /> {idx % 2 === 0 ? 'Office Premises (Inside Geofence)' : 'Field Client Visit (GPS Tagged)'}
+                        <h5 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                          {member.firstName} {member.lastName}
+                        </h5>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                          <span>{member.designation || 'Team Member'}</span>
+                          <span>•</span>
+                          <span className="font-mono">{idx % 2 === 0 ? 'Punch: 09:15 AM' : 'Punch: 09:30 AM'}</span>
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200">
-                      Verified
-                    </span>
+                    <div className="text-right">
+                      <span className={cn(
+                        "text-[10px] font-bold px-2.5 py-1 rounded-full border",
+                        idx === 3 
+                          ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200/60" 
+                          : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/60"
+                      )}>
+                        {idx === 3 ? 'On Leave' : 'Present · On Time'}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-1">Shift A (9 AM - 6 PM)</p>
+                    </div>
                   </div>
                 ))}
               </div>

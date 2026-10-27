@@ -8,6 +8,8 @@ import {
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store';
 import { useLeaveStore } from '../../store/leaveStore';
+import { useAttendanceStore } from '../../store/attendanceStore';
+import { useEmployeeStore } from '../../store/employeeStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/Card';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
@@ -17,25 +19,52 @@ import { cn } from '../../utils/cn';
 export const EmployeeDashboard = () => {
   const { user } = useAuthStore();
   const { addLeaveRequest, leaveRequests, leaveTypes } = useLeaveStore();
-  const [isClockedIn, setIsClockedIn] = useState(false);
-  const [clockTime, setClockTime] = useState<string | null>(null);
+  const { 
+    clockInEmployee, 
+    clockOutEmployee, 
+    getActiveSession, 
+    attendanceRecords,
+    shifts 
+  } = useAttendanceStore();
+  const { employees } = useEmployeeStore();
+  const matchedEmp = employees.find(e => e.email?.toLowerCase() === user?.email?.toLowerCase() || e.id === (user as any)?.id);
+  const employeeId = matchedEmp?.id || (user as any)?.id || (user as any)?.empId || '1';
+
   const [currentTime, setCurrentTime] = useState(new Date());
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [session, setSession] = useState<any>(null);
+
+  const todayDateStr = currentTime.toISOString().split('T')[0];
+  const todayRecord = attendanceRecords.find(r => r.employeeId === employeeId && r.date === todayDateStr);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    let interval: any;
-    if (isClockedIn) {
-      interval = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
+    // Initial check on mount
+    const active = getActiveSession(employeeId);
+    setSession(active);
+    if (active) {
+      setElapsedTime(Math.floor((Date.now() - active.checkInTimestamp) / 1000));
     }
-    return () => clearInterval(interval);
-  }, [isClockedIn]);
+  }, [employeeId, getActiveSession]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+
+      // If active session exists, update elapsed time and check auto shift end
+      const active = getActiveSession(employeeId);
+      if (active) {
+        setSession(active);
+        setElapsedTime(Math.floor((Date.now() - active.checkInTimestamp) / 1000));
+      } else if (session) {
+        setSession(null);
+        toast('Your daily shift has concluded. Auto checked out.', { icon: '🏁' });
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [employeeId, getActiveSession, session]);
+
+  const isClockedIn = !!session;
+  const clockTime = session?.checkInTimeStr || todayRecord?.checkIn || null;
 
   const formatElapsed = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
@@ -63,14 +92,16 @@ export const EmployeeDashboard = () => {
   const pendingLeavesCount = myLeaves.filter(l => l.status === 'Pending').length;
   const approvedLeavesCount = myLeaves.filter(l => l.status === 'Approved').length;
 
-  const handleClockToggle = () => {
+  const handleClockToggle = async () => {
     if (isClockedIn) {
-      setIsClockedIn(false);
-      toast.success('Clocked out successfully!', { icon: '👋' });
+      const { checkOutTimeStr, totalHours } = await clockOutEmployee(employeeId, false);
+      setSession(null);
+      toast.success(`Clocked out successfully at ${checkOutTimeStr}! Logged ${totalHours} hours.`, { icon: '👋' });
     } else {
-      setIsClockedIn(true);
-      setClockTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      toast.success('Clocked in successfully!', { icon: '🚀' });
+      const { checkInTimeStr } = await clockInEmployee(employeeId, matchedEmp?.shiftId || 'shift-1');
+      const newSession = getActiveSession(employeeId);
+      setSession(newSession);
+      toast.success(`Clocked in at ${checkInTimeStr}! Timer is running continuously.`, { icon: '🚀' });
     }
   };
 
@@ -221,10 +252,12 @@ export const EmployeeDashboard = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <p className="text-xl font-semibold text-white">Not clocked in</p>
+                    <p className="text-xl font-bold text-white">
+                      {todayRecord?.checkOut ? 'Shift Completed' : 'Not clocked in'}
+                    </p>
                     <p className="text-xs text-emerald-300 mt-1 flex items-center">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
-                      Shift active
+                      {todayRecord?.checkOut ? `Out at ${todayRecord.checkOut} (${todayRecord.totalHours || 8.5} hrs)` : 'Shift active (09:00 - 18:00)'}
                     </p>
                   </motion.div>
                 )}

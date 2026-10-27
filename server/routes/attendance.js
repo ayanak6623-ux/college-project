@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Attendance from '../models/Attendance.js';
 import { attendanceZodSchema, updateAttendanceZodSchema } from '../schemas/attendanceValidation.js';
 
@@ -72,7 +73,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update an existing attendance record by ID
+// Update an existing attendance record by ID (or fallback upsert by employeeId and date)
 router.put('/:id', async (req, res) => {
   try {
     // 1. Partial Zod Validation
@@ -88,11 +89,25 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    const updated = await Attendance.findByIdAndUpdate(
-      req.params.id,
-      validation.data,
-      { new: true, runValidators: true }
-    );
+    let updated = null;
+    const isObjectId = mongoose.Types.ObjectId.isValid(req.params.id) && /^[0-9a-fA-F]{24}$/.test(req.params.id);
+
+    if (isObjectId) {
+      updated = await Attendance.findByIdAndUpdate(
+        req.params.id,
+        validation.data,
+        { new: true, runValidators: true }
+      );
+    }
+
+    // Fallback: If not an ObjectId or record wasn't found by id, upsert by employeeId + date
+    if (!updated && (req.body.employeeId && req.body.date)) {
+      updated = await Attendance.findOneAndUpdate(
+        { employeeId: req.body.employeeId, date: req.body.date },
+        { $set: validation.data },
+        { new: true, upsert: true, runValidators: true }
+      );
+    }
 
     if (!updated) {
       return res.status(404).json({ message: 'Attendance record not found' });

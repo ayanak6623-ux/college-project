@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import type { Shift, WorkSettings, Holiday, AttendanceRecord, AttendanceStatus } from '../types/attendance';
 
+export interface ActiveSession {
+  employeeId: string;
+  checkInTimestamp: number; // Unix epoch ms
+  checkInTimeStr: string;   // e.g. "09:15 AM"
+  date: string;             // YYYY-MM-DD
+  shiftId: string;
+}
+
 const defaultShifts: Shift[] = [
   { id: 'shift-1', name: 'General', startTime: '09:00', endTime: '18:00', breakDuration: 60, gracePeriod: 15, halfDayHours: 4, fullDayHours: 8, workingDays: [1, 2, 3, 4, 5], color: '#3b82f6' },
   { id: 'shift-2', name: 'Morning', startTime: '06:00', endTime: '14:00', breakDuration: 30, gracePeriod: 15, halfDayHours: 4, fullDayHours: 7.5, workingDays: [1, 2, 3, 4, 5], color: '#10b981' },
@@ -44,7 +52,7 @@ const generateMockAttendance = (): AttendanceRecord[] => {
     
     // For 20 mock employees
     for (let empId = 1; empId <= 20; empId++) {
-      if (isWeekend) continue; // Skip weekends for simplicity
+      if (isWeekend) continue;
       
       const rand = Math.random();
       let status: AttendanceStatus = 'Present';
@@ -95,10 +103,17 @@ interface AttendanceState {
   settings: WorkSettings;
   holidays: Holiday[];
   attendanceRecords: AttendanceRecord[];
+  activeSessions: Record<string, ActiveSession>; // Persisted active punch sessions per employeeId
   isLoading: boolean;
   
   fetchAttendance: () => Promise<void>;
   saveAttendanceRecord: (record: Omit<AttendanceRecord, 'id'> & { id?: string }) => Promise<void>;
+  
+  // Continuous punch clock session methods
+  clockInEmployee: (employeeId: string, shiftId?: string) => Promise<{ checkInTimeStr: string }>;
+  clockOutEmployee: (employeeId: string, isAuto?: boolean) => Promise<{ checkOutTimeStr: string; totalHours: number }>;
+  getActiveSession: (employeeId: string) => ActiveSession | null;
+  
   addShift: (shift: Omit<Shift, 'id'>) => void;
   updateShift: (id: string, shift: Partial<Shift>) => void;
   deleteShift: (id: string) => void;
@@ -119,6 +134,7 @@ export const useAttendanceStore = create<AttendanceState>()(
       settings: defaultSettings,
       holidays: defaultHolidays,
       attendanceRecords: generateMockAttendance(),
+      activeSessions: {},
       isLoading: false,
 
       fetchAttendance: async () => {
@@ -128,7 +144,14 @@ export const useAttendanceStore = create<AttendanceState>()(
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-              set({ attendanceRecords: data });
+              set((state) => {
+                // Merge DB records with existing records (DB records take priority)
+                const dbKeys = new Set(data.map((r: any) => `${r.employeeId}_${r.date}`));
+                const remaining = state.attendanceRecords.filter(
+                  r => !dbKeys.has(`${r.employeeId}_${r.date}`)
+                );
+                return { attendanceRecords: [...data, ...remaining] };
+              });
             }
           }
         } catch (err) {
@@ -156,7 +179,120 @@ export const useAttendanceStore = create<AttendanceState>()(
           }
         } catch (err) {
           console.error('Error saving attendance record to database:', err);
+          // Fallback optimistic update
+          set((state) => ({
+            attendanceRecords: [
+              { ...record, id: record.id || `att-${Date.now()}` } as AttendanceRecord,
+              ...state.attendanceRecords.filter(r => !(r.employeeId === record.employeeId && r.date === record.date))
+            ]
+          }));
         }
+      },
+
+      // Clock in: saves persistent timestamp and syncs to DB
+      clockInEmployee: async (employeeId: string, shiftId = 'shift-1') => {
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const checkIn24 = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const timestamp = now.getTime();
+
+        const session: ActiveSession = {
+          employeeId,
+          checkInTimestamp: timestamp,
+          checkInTimeStr: timeStr,
+          date: dateStr,
+          shiftId,
+        };
+
+        set((state) => ({
+          activeSessions: {
+            ...state.activeSessions,
+            [employeeId]: session,
+          },
+        }));
+
+        await get().saveAttendanceRecord({
+          employeeId,
+          date: dateStr,
+          checkIn: checkIn24,
+          status: 'Present',
+          shiftId,
+          totalHours: 0,
+        });
+
+        return { checkInTimeStr: timeStr };
+      },
+
+      // Clock out: calculates duration, removes active session, and syncs
+      clockOutEmployee: async (employeeId: string, isAuto = false) => {
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const checkOut24 = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        const session = get().activeSessions?.[employeeId];
+
+        let totalHours = 8.5;
+        let checkIn24 = '09:00';
+        if (session) {
+          const elapsedMs = now.getTime() - session.checkInTimestamp;
+          totalHours = Math.max(0.1, Number((elapsedMs / (1000 * 60 * 60)).toFixed(1)));
+          if (isAuto) {
+            totalHours = 8.5;
+          }
+          const inDate = new Date(session.checkInTimestamp);
+          checkIn24 = inDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+
+        set((state) => {
+          const updated = { ...state.activeSessions };
+          delete updated[employeeId];
+          return { activeSessions: updated };
+        });
+
+        await get().saveAttendanceRecord({
+          employeeId,
+          date: session?.date || dateStr,
+          checkIn: checkIn24,
+          checkOut: isAuto ? '18:00' : checkOut24,
+          status: 'Present',
+          shiftId: session?.shiftId || 'shift-1',
+          totalHours,
+          notes: isAuto ? 'Shift concluded - Auto logged out' : undefined,
+        });
+
+        return { checkOutTimeStr: timeStr, totalHours };
+      },
+
+      // Get active session with auto shift end check
+      getActiveSession: (employeeId: string) => {
+        const session = get().activeSessions?.[employeeId];
+        if (!session) return null;
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        // If session is from previous date, auto finalize it
+        if (session.date !== todayStr) {
+          get().clockOutEmployee(employeeId, true);
+          return null;
+        }
+
+        // Check if shift duration completed (e.g. 9 hours = 32400 sec) OR shift end time has passed
+        const shift = get().shifts.find(s => s.id === session.shiftId) || get().shifts[0];
+        const maxShiftSec = ((shift.fullDayHours || 8) + 1) * 3600; // 9 hrs
+        const elapsedSec = Math.floor((Date.now() - session.checkInTimestamp) / 1000);
+
+        const [endH, endM] = (shift.endTime || '18:00').split(':').map(Number);
+        const now = new Date();
+        const shiftEndDate = new Date();
+        shiftEndDate.setHours(endH, endM, 0, 0);
+
+        // If elapsed time exceeded shift limit or current time passed shift end time
+        if (elapsedSec >= maxShiftSec || (now > shiftEndDate && new Date(session.checkInTimestamp) < shiftEndDate)) {
+          get().clockOutEmployee(employeeId, true);
+          return null;
+        }
+
+        return session;
       },
       
       addShift: (shift) => set((state) => ({ shifts: [...state.shifts, { ...shift, id: uuidv4() }] })),
@@ -169,6 +305,25 @@ export const useAttendanceStore = create<AttendanceState>()(
       deleteHoliday: (id) => set((state) => ({ holidays: state.holidays.filter(h => h.id !== id) })),
       
       updateAttendance: async (id, record) => {
+        const existing = get().attendanceRecords.find(a => a.id === id);
+        const employeeId = (record as any).employeeId || existing?.employeeId;
+        const date = (record as any).date || existing?.date;
+
+        if (employeeId && date) {
+          await get().saveAttendanceRecord({
+            id: (id.startsWith('new-') || id.startsWith('att-')) ? existing?.id : id,
+            shiftId: existing?.shiftId || 'shift-1',
+            totalHours: existing?.totalHours || 0,
+            status: existing?.status || 'Present',
+            ...existing,
+            ...record,
+            employeeId,
+            date,
+          });
+          return;
+        }
+
+        // Fallback optimistic update
         set((state) => ({
           attendanceRecords: state.attendanceRecords.map(a => a.id === id ? { ...a, ...record } : a)
         }));
@@ -192,7 +347,6 @@ export const useAttendanceStore = create<AttendanceState>()(
         const cur = new Date(start);
         while (cur <= end) {
           const dateStr = cur.toISOString().split('T')[0];
-          // Check if record exists
           const existingIdx = newRecords.findIndex(r => r.employeeId === employeeId && r.date === dateStr);
           if (existingIdx >= 0) {
             newRecords[existingIdx] = { ...newRecords[existingIdx], status: 'On Leave', checkIn: undefined, checkOut: undefined, totalHours: 0 };
@@ -201,7 +355,7 @@ export const useAttendanceStore = create<AttendanceState>()(
               id: `att-${dateStr}-${employeeId}`,
               employeeId,
               date: dateStr,
-              shiftId: 'shift-1', // Default, should ideally match employee's shift
+              shiftId: 'shift-1',
               status: 'On Leave',
               totalHours: 0,
             });
