@@ -15,6 +15,7 @@ import { Select } from '../../components/Select';
 import { Badge } from '../../components/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/Card';
 import toast from 'react-hot-toast';
+import { LeaveCalendarView } from './LeaveCalendarView';
 
 // Helper to calc business days (excluding weekends)
 const calculateDays = (start: string, end: string, isHalfDay: boolean) => {
@@ -217,7 +218,7 @@ export const LeavesPage = () => {
             { id: 'pending', label: 'Pending' },
             { id: 'approved', label: 'Approved' },
             { id: 'rejected', label: 'Rejected' },
-            ...(!isEmployee ? [{ id: 'calendar', label: 'Leave Calendar' }] : []),
+            { id: 'calendar', label: 'Leave Calendar' },
           ]}
           activeTab={activeTab}
           onChange={setActiveTab}
@@ -327,11 +328,7 @@ export const LeavesPage = () => {
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-64 text-slate-500 flex-col gap-3">
-            <CalendarDays size={48} className="text-slate-300" />
-            <p>Leave Calendar View</p>
-            <p className="text-sm max-w-sm text-center">Interactive calendar showing employees on leave will be displayed here.</p>
-          </div>
+          <LeaveCalendarView />
         )}
       </div>
 
